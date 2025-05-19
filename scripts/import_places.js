@@ -1,3 +1,4 @@
+// Dummy update to trigger commit
 // scripts/import_places.js
 import fetch from 'node-fetch';
 import fs from 'fs';
@@ -82,7 +83,7 @@ async function importPlaces() {
       if (!supabaseResponse.ok) {
         console.error('❌ Fehler beim Schreiben in Supabase:', supabaseResponse.status, result);
       } else {
-        console.log('✅ Erfolgreich gespeichert:', result);
+        console.log('✅ Super Erfolgreich gespeichert:', result);
       }
 
     } catch (err) {
