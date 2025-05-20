@@ -16,7 +16,7 @@ const HEADERS = {
 };
 
 const insertLocation = async (data) => {
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/locations`, {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/locations?returning=representation`, {
     method: 'POST',
     headers: HEADERS,
     body: JSON.stringify(data)
@@ -41,16 +41,7 @@ const insertLocationValues = async (locationId, translations) => {
 
 const importPlaces = async () => {
   console.log('🧭 Starte Importvorgang...');
-
-  let placeIds = [];
-  try {
-    const raw = fs.readFileSync(PLACE_IDS_PATH, 'utf-8');
-    placeIds = JSON.parse(raw);
-  } catch (err) {
-    console.error('❌ Fehler beim Lesen der place_ids.json:', err.message);
-    process.exit(1);
-  }
-
+  const placeIds = JSON.parse(fs.readFileSync(PLACE_IDS_PATH));
   console.log('📂 Geladene Place-IDS:', placeIds);
 
   for (const placeId of placeIds) {
@@ -68,7 +59,7 @@ const importPlaces = async () => {
 
       const location = {
         google_place_id: placeId,
-        display_name: result.name, // Nur Deutsch für die Anzeige
+        display_name: result.name,
         address: result.formatted_address || null,
         lat: result.geometry?.location?.lat || null,
         lng: result.geometry?.location?.lng || null,
@@ -82,18 +73,14 @@ const importPlaces = async () => {
       };
 
       const insertRes = await insertLocation(location);
-      const insertData = await insertRes.json().catch(() => ({}));
+      const insertData = await insertRes.json().catch(() => null);
 
-      if (!insertRes.ok) {
+      if (!insertRes.ok || !insertData || !Array.isArray(insertData) || !insertData[0]?.id) {
         console.error('❌ Fehler beim Schreiben in Supabase:', insertRes.status, insertData);
         continue;
       }
 
-      const locationId = insertData[0]?.id;
-      if (!locationId) {
-        console.error('❌ Kein ID erhalten nach Insert');
-        continue;
-      }
+      const locationId = insertData[0].id;
 
       const translations = {
         de: result.name,
@@ -109,6 +96,7 @@ const importPlaces = async () => {
       } else {
         console.log('✅ Erfolgreich gespeichert:', result.name);
       }
+
     } catch (error) {
       console.error('💥 Unerwarteter Fehler:', error.message);
     }
