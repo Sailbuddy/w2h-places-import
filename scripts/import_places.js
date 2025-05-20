@@ -5,7 +5,7 @@ import fs from 'fs';
 dotenv.config();
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_API_KEY = process.env.SUPABASE_API_KEY;
+const SUPABASE_API_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 const PLACE_IDS_PATH = './data/place_ids.json';
 
