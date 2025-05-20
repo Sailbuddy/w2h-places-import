@@ -51,7 +51,7 @@ const importPlaces = async () => {
       const googleData = await googleRes.json();
 
       if (googleData.status !== 'OK') {
-        console.warn(⚠️ Fehler bei Verarbeitung:', googleData.status);
+        console.warn('⚠️ Fehler bei Verarbeitung:', googleData.status);
         continue;
       }
 
