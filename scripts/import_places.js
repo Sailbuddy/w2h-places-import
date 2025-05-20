@@ -16,9 +16,12 @@ const HEADERS = {
 };
 
 const insertLocation = async (data) => {
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/locations?returning=representation`, {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/locations`, {
     method: 'POST',
-    headers: HEADERS,
+    headers: {
+      ...HEADERS,
+      'Prefer': 'return=representation'
+    },
     body: JSON.stringify(data)
   });
   return response;
@@ -59,7 +62,7 @@ const importPlaces = async () => {
 
       const location = {
         google_place_id: placeId,
-        display_name: result.name,
+        display_name: result.name, // Nur Deutsch für die Anzeige
         address: result.formatted_address || null,
         lat: result.geometry?.location?.lat || null,
         lng: result.geometry?.location?.lng || null,
@@ -73,14 +76,18 @@ const importPlaces = async () => {
       };
 
       const insertRes = await insertLocation(location);
-      const insertData = await insertRes.json().catch(() => null);
+      const insertData = await insertRes.json();
 
-      if (!insertRes.ok || !insertData || !Array.isArray(insertData) || !insertData[0]?.id) {
+      if (!insertRes.ok) {
         console.error('❌ Fehler beim Schreiben in Supabase:', insertRes.status, insertData);
         continue;
       }
 
-      const locationId = insertData[0].id;
+      const locationId = insertData[0]?.id;
+      if (!locationId) {
+        console.error('❌ Kein ID erhalten nach Insert');
+        continue;
+      }
 
       const translations = {
         de: result.name,
@@ -96,7 +103,6 @@ const importPlaces = async () => {
       } else {
         console.log('✅ Erfolgreich gespeichert:', result.name);
       }
-
     } catch (error) {
       console.error('💥 Unerwarteter Fehler:', error.message);
     }
