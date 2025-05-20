@@ -41,7 +41,16 @@ const insertLocationValues = async (locationId, translations) => {
 
 const importPlaces = async () => {
   console.log('🧭 Starte Importvorgang...');
-  const placeIds = JSON.parse(fs.readFileSync(PLACE_IDS_PATH));
+
+  let placeIds = [];
+  try {
+    const raw = fs.readFileSync(PLACE_IDS_PATH, 'utf-8');
+    placeIds = JSON.parse(raw);
+  } catch (err) {
+    console.error('❌ Fehler beim Lesen der place_ids.json:', err.message);
+    process.exit(1);
+  }
+
   console.log('📂 Geladene Place-IDS:', placeIds);
 
   for (const placeId of placeIds) {
@@ -73,7 +82,7 @@ const importPlaces = async () => {
       };
 
       const insertRes = await insertLocation(location);
-      const insertData = await insertRes.json();
+      const insertData = await insertRes.json().catch(() => ({}));
 
       if (!insertRes.ok) {
         console.error('❌ Fehler beim Schreiben in Supabase:', insertRes.status, insertData);
