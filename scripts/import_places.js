@@ -51,7 +51,7 @@ const importPlaces = async () => {
       const googleData = await googleRes.json();
 
       if (googleData.status !== 'OK') {
-        console.warn('⚠️ Fehler bei Verarbeitung:', googleData.status);
+        console.warn(⚠️ Fehler bei Verarbeitung:', googleData.status);
         continue;
       }
 
@@ -59,7 +59,7 @@ const importPlaces = async () => {
 
       const location = {
         google_place_id: placeId,
-        name: result.name,
+        display_name: result.name, // Nur Deutsch für die Anzeige
         address: result.formatted_address || null,
         lat: result.geometry?.location?.lat || null,
         lng: result.geometry?.location?.lng || null,
@@ -69,7 +69,7 @@ const importPlaces = async () => {
         website: result.website || null,
         rating: result.rating || null,
         price_level: result.price_level || null,
-        category_id: 9 // Platzhalter, später durch automatische Kategorisierung ersetzen
+        category_id: 9 // Platzhalter-Kategorie
       };
 
       const insertRes = await insertLocation(location);
