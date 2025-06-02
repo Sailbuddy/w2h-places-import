@@ -1,20 +1,3 @@
 [
-  {
-    "plus_code_input": "R22V+PG Salzburg",
-    "plus_code_clean": "R22V+PG",
-    "plus_code_full": "9C3WR22V+PG",
-    "status": "pending"
-  },
-  {
-    "plus_code_input": "6H3V+GV",
-    "plus_code_clean": "6H3V+GV",
-    "plus_code_full": "9C3W6H3V+GV",
-    "status": "pending"
-  },
-  {
-    "plus_code_input": "6J34+6F",
-    "plus_code_clean": "6J34+6F",
-    "plus_code_full": "9C3W6J34+6F",
-    "status": "pending"
-  }
+  "ChIJOUY0QU0rM0M"
 ]
