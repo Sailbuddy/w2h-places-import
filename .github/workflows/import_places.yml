@@ -2,7 +2,7 @@ name: Import Google Places
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Täglich um 00:00 UTC
+    - cron: '0 0 * * *'  # Läuft täglich um 00:00 UTC
   workflow_dispatch:
 
 jobs:
@@ -33,9 +33,11 @@ jobs:
         run: echo "[]" > data/place_ids.json
 
       - name: Commit cleared place_ids.json
+        env:
+          GH_TOKEN: ${{ secrets.GH_PUSH_TOKEN }}
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add data/place_ids.json
           git commit -m "🧹 place_ids.json nach Import geleert"
-          git push https://x-access-token:${GH_PUSH_TOKEN}@github.com/Sailbuddy/w2h-places-import.git HEAD:main
+          git push https://x-access-token:${GH_TOKEN}@github.com/Sailbuddy/w2h-places-import.git HEAD:main
