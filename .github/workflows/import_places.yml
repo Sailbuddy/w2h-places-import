@@ -13,24 +13,24 @@ jobs:
       GH_PUSH_TOKEN: ${{ secrets.GH_PUSH_TOKEN }}
 
     steps:
-      - name: 📥 Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: 🛠️ Set up Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      - name: 📦 Install dependencies
+      - name: Install dependencies
         run: npm install
 
-      - name: ▶️ Run import script
+      - name: Run import script
         run: node scripts/import_places.js
 
-      - name: 🧹 Clear place_ids.json
+      - name: Clear place_ids.json
         run: echo "[]" > data/place_ids.json
 
-      - name: 🕵️ Secret-Check: Ist GH_PUSH_TOKEN verfügbar?
+      - name: "🧑‍💻 Secret-Check: Ist GH_PUSH_TOKEN verfügbar?"
         run: |
           if [ -z "${GH_PUSH_TOKEN}" ]; then
             echo "::error ::❌ GH_PUSH_TOKEN ist NICHT verfügbar!"
@@ -38,16 +38,19 @@ jobs:
           else
             echo "::notice ::✅ GH_PUSH_TOKEN ist definiert und beginnt mit ${GH_PUSH_TOKEN:0:6}..."
           fi
+        env:
+          GH_PUSH_TOKEN: ${{ secrets.GH_PUSH_TOKEN }}
 
-      - name: 🧑‍💻 Configure Git identity
+      - name: Configure Git identity
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
 
-      - name: 🚀 Commit cleared place_ids.json
+      - name: Commit cleared place_ids.json
         run: |
           git add data/place_ids.json
-          git commit -m "🧹 place_ids.json nach Import geleert" || echo "nichts zu committen"
+          git commit -m "🧹 (Debug) place_ids.json nach Import geleert" || echo "nichts zu committen"
 
-      - name: 🔐 Push changes with full token
-        run: git push https://x-access-token:${GH_PUSH_TOKEN}@github.com/Sailbuddy/w2h-places-import.git HEAD:main
+      - name: Push changes with full token
+        run: |
+          git push https://x-access-token:${{ secrets.GH_PUSH_TOKEN }}@github.com/Sailbuddy/w2h-places-import.git HEAD:main
