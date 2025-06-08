@@ -12,6 +12,7 @@ jobs:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      GH_PUSH_TOKEN: ${{ secrets.GH_PUSH_TOKEN }}
 
     steps:
       - name: Checkout repository
@@ -31,10 +32,13 @@ jobs:
       - name: Clear place_ids.json
         run: echo "[]" > data/place_ids.json
 
+      - name: Debug Git Remote (optional)
+        run: git remote -v
+
       - name: Commit cleared place_ids.json
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add data/place_ids.json
-          git commit -m "🧹 place_ids.json nach Import geleert"
+          git commit -m "🧹 place_ids.json nach Import geleert" || echo "nichts zu committen"
           git push https://x-access-token:${{ secrets.GH_PUSH_TOKEN }}@github.com/Sailbuddy/w2h-places-import.git HEAD:main
