@@ -6,7 +6,10 @@ dotenv.config();
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_API_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+const GITHUB_API_TOKEN = process.env.GITHUB_API_TOKEN;
+const GITHUB_REPO = process.env.GITHUB_REPO || 'Sailbuddy/w2h-places-import';
 const PLACE_IDS_PATH = './data/place_ids.json';
+const PLACE_IDS_REPO_PATH = 'data/place_ids.json';
 
 const HEADERS = {
   'apikey': SUPABASE_API_KEY,
@@ -47,6 +50,44 @@ const insertLocationValues = async (locationId, translations) => {
     body: JSON.stringify(values)
   });
   return response;
+};
+
+const getFileSha = async () => {
+  const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${PLACE_IDS_REPO_PATH}`;
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${GITHUB_API_TOKEN}`,
+      Accept: 'application/vnd.github+json'
+    }
+  });
+  if (!res.ok) throw new Error(`GitHub SHA fetch failed: ${res.status}`);
+  const json = await res.json();
+  return json.sha;
+};
+
+const clearPlaceIdsOnGitHub = async () => {
+  const sha = await getFileSha();
+  const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${PLACE_IDS_REPO_PATH}`;
+  const content = Buffer.from(JSON.stringify([], null, 2)).toString('base64');
+
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${GITHUB_API_TOKEN}`,
+      Accept: 'application/vnd.github+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      message: '🧹 Cleanup: Leere place_ids.json nach Importlauf',
+      content,
+      sha
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`GitHub Update fehlgeschlagen: ${err}`);
+  }
 };
 
 const importPlaces = async () => {
@@ -127,11 +168,11 @@ const importPlaces = async () => {
   }
 };
 
-importPlaces().then(() => {
+importPlaces().then(async () => {
   try {
-    fs.writeFileSync(PLACE_IDS_PATH, '[]');
-    console.log('🧹 place_ids.json wurde erfolgreich geleert.');
+    await clearPlaceIdsOnGitHub();
+    console.log('🧹 place_ids.json wurde über GitHub API geleert.');
   } catch (err) {
-    console.error('⚠️ Fehler beim Leeren der place_ids.json:', err);
+    console.error('⚠️ Fehler beim GitHub-Cleanup:', err);
   }
 });
