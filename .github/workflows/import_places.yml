@@ -1,9 +1,9 @@
-name: Import Google Places (einfach & stabil)
+name: Import Google Places
 
 on:
   schedule:
     - cron: '0 0 * * *'  # Täglich um 00:00 UTC
-  workflow_dispatch:     # Auch manuell auslösbar
+  workflow_dispatch:      # Manuell auslösbar
 
 jobs:
   import:
@@ -14,19 +14,16 @@ jobs:
       GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
 
     steps:
-      - name: 📦 Repository klonen
+      - name: 📥 Repository klonen
         uses: actions/checkout@v3
 
-      - name: 🧰 Node.js einrichten
+      - name: 🛠 Node.js einrichten
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      - name: 📥 Abhängigkeiten installieren
+      - name: 📦 Abhängigkeiten installieren
         run: npm install
 
-      - name: 🚀 Import-Skript ausführen
+      - name: 🚀 Import ausführen
         run: node scripts/import_places.js
-
-      - name: 🧹 place_ids.json lokal leeren
-        run: echo "[]" > data/place_ids.json
