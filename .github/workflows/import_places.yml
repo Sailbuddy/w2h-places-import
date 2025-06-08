@@ -31,6 +31,8 @@ jobs:
         run: echo "[]" > data/place_ids.json
 
       - name: Secret-Check: Ist GH_PUSH_TOKEN verfügbar?
+        env:
+          GH_PUSH_TOKEN: ${{ secrets.GH_PUSH_TOKEN }}
         run: |
           if [ -z "${GH_PUSH_TOKEN}" ]; then
             echo "::error ::❌ GH_PUSH_TOKEN ist NICHT verfügbar!"
@@ -38,8 +40,6 @@ jobs:
           else
             echo "::notice ::✅ GH_PUSH_TOKEN ist definiert und beginnt mit ${GH_PUSH_TOKEN:0:6}..."
           fi
-        env:
-          GH_PUSH_TOKEN: ${{ secrets.GH_PUSH_TOKEN }}
 
       - name: Configure Git identity
         run: |
