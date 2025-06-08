@@ -1,15 +1,17 @@
 import fetch from 'node-fetch';
+import dotenv from 'dotenv';
 import fs from 'fs';
+dotenv.config();
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_API_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 const PLACE_IDS_PATH = './data/place_ids.json';
 
 const HEADERS = {
-  'apikey': SUPABASE_SERVICE_ROLE_KEY,
-  'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-  'Content-Type': 'application/json'
+  apikey: SUPABASE_API_KEY,
+  Authorization: `Bearer ${SUPABASE_API_KEY}`,
+  'Content-Type': 'application/json',
 };
 
 const fallbackNames = {
@@ -17,7 +19,7 @@ const fallbackNames = {
   en: 'Unfortunately, the name is missing',
   fr: 'Malheureusement, le nom est absent',
   hr: 'Nažalost, ime nedostaje',
-  it: 'Purtroppo manca il nome'
+  it: 'Purtroppo manca il nome',
 };
 
 const insertLocation = async (data) => {
@@ -25,9 +27,9 @@ const insertLocation = async (data) => {
     method: 'POST',
     headers: {
       ...HEADERS,
-      'Prefer': 'return=representation'
+      Prefer: 'return=representation',
     },
-    body: JSON.stringify(data)
+    body: JSON.stringify(data),
   });
   return response;
 };
@@ -36,13 +38,13 @@ const insertLocationValues = async (locationId, translations) => {
   const values = Object.entries(translations).map(([lang, name]) => ({
     location_id: locationId,
     language_code: lang,
-    name
+    name,
   }));
 
   const response = await fetch(`${SUPABASE_URL}/rest/v1/location_values`, {
     method: 'POST',
     headers: HEADERS,
-    body: JSON.stringify(values)
+    body: JSON.stringify(values),
   });
   return response;
 };
@@ -95,7 +97,7 @@ const importPlaces = async () => {
         website: mainResult.website || null,
         rating: mainResult.rating || null,
         price_level: mainResult.price_level || null,
-        category_id: 9
+        category_id: 9,
       };
 
       const insertRes = await insertLocation(location);
@@ -123,6 +125,9 @@ const importPlaces = async () => {
       console.error('💥 Unerwarteter Fehler:', error.message);
     }
   }
+
+  // 👉 Leeren der Datei wurde entfernt (manuelle Kontrolle)
+  // fs.writeFileSync(PLACE_IDS_PATH, JSON.stringify([]));
 };
 
 importPlaces();
