@@ -1,7 +1,9 @@
-name: Import Google Places (Debug mit Token-Check)
+name: Import Google Places (einfach & stabil)
 
 on:
-  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'  # Täglich um 00:00 UTC
+  workflow_dispatch:     # Auch manuell auslösbar
 
 jobs:
   import:
@@ -10,47 +12,21 @@ jobs:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-      GH_PUSH_TOKEN: ${{ secrets.GH_PUSH_TOKEN }}
 
     steps:
-      - name: Checkout repository
+      - name: 📦 Repository klonen
         uses: actions/checkout@v3
 
-      - name: Set up Node.js
+      - name: 🧰 Node.js einrichten
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      - name: Install dependencies
+      - name: 📥 Abhängigkeiten installieren
         run: npm install
 
-      - name: Run import script
+      - name: 🚀 Import-Skript ausführen
         run: node scripts/import_places.js
 
-      - name: Clear place_ids.json
+      - name: 🧹 place_ids.json lokal leeren
         run: echo "[]" > data/place_ids.json
-
-      - name: "🧑‍💻 Secret-Check: Ist GH_PUSH_TOKEN verfügbar?"
-        run: |
-          if [ -z "${GH_PUSH_TOKEN}" ]; then
-            echo "::error ::❌ GH_PUSH_TOKEN ist NICHT verfügbar!"
-            exit 1
-          else
-            echo "::notice ::✅ GH_PUSH_TOKEN ist definiert und beginnt mit ${GH_PUSH_TOKEN:0:6}..."
-          fi
-        env:
-          GH_PUSH_TOKEN: ${{ secrets.GH_PUSH_TOKEN }}
-
-      - name: Configure Git identity
-        run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-
-      - name: Commit cleared place_ids.json
-        run: |
-          git add data/place_ids.json
-          git commit -m "🧹 (Debug) place_ids.json nach Import geleert" || echo "nichts zu committen"
-
-      - name: Push changes with full token
-        run: |
-          git push https://x-access-token:${{ secrets.GH_PUSH_TOKEN }}@github.com/Sailbuddy/w2h-places-import.git HEAD:main
