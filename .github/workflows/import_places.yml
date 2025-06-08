@@ -32,13 +32,11 @@ jobs:
       - name: Clear place_ids.json
         run: echo "[]" > data/place_ids.json
 
-      - name: Debug Git Remote (optional)
-        run: git remote -v
-
       - name: Commit cleared place_ids.json
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GH_PUSH_TOKEN }}@github.com/Sailbuddy/w2h-places-import.git
           git add data/place_ids.json
           git commit -m "🧹 place_ids.json nach Import geleert" || echo "nichts zu committen"
-          git push https://x-access-token:${{ secrets.GH_PUSH_TOKEN }}@github.com/Sailbuddy/w2h-places-import.git HEAD:main
+          git push origin HEAD:main
