@@ -6,7 +6,7 @@ dotenv.config();
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_API_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
-const GITHUB_API_TOKEN = process.env.GITHUB_API_TOKEN;
+const GITHUB_API_TOKEN = process.env.GH_API_TOKEN; // <- angepasst
 const GITHUB_REPO = process.env.GITHUB_REPO || 'Sailbuddy/w2h-places-import';
 const PLACE_IDS_PATH = './data/place_ids.json';
 const PLACE_IDS_REPO_PATH = 'data/place_ids.json';
