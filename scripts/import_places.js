@@ -66,6 +66,7 @@ const getFileSha = async () => {
 };
 
 const clearPlaceIdsOnGitHub = async () => {
+  console.log('📦 Update-Request an GitHub wird vorbereitet für', PLACE_IDS_REPO_PATH);
   const sha = await getFileSha();
   const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${PLACE_IDS_REPO_PATH}`;
   const content = Buffer.from(JSON.stringify([], null, 2)).toString('base64');
@@ -173,6 +174,6 @@ importPlaces().then(async () => {
     await clearPlaceIdsOnGitHub();
     console.log('🧹 place_ids.json wurde über GitHub API geleert.');
   } catch (err) {
-    console.error('⚠️ Fehler beim GitHub-Cleanup:', err);
+    console.error('⚠️ Fehler beim GitHub-Cleanup:', err.message || err);
   }
 });
