@@ -1,12 +1,15 @@
-name: Import Google Places (einfach & stabil)
+name: Import Google Places
 
 on:
-  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'  # Läuft täglich um 00:00 UTC
+  workflow_dispatch:     # Manuelles Auslösen jederzeit möglich
 
 jobs:
   import:
     runs-on: ubuntu-latest
     env:
+      ACTIONS_STEP_DEBUG: true
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
@@ -21,7 +24,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm install
+        run: npm install axios dotenv @supabase/supabase-js
 
       - name: Run import script
         run: node scripts/import_places.js
