@@ -75,7 +75,6 @@ const importPlaces = async () => {
         const name = data.result?.name?.trim();
         translations[lang] = name || fallbackNames[lang];
 
-        // Nur einmal die allgemeinen Daten speichern (z. B. aus Deutsch)
         if (lang === 'de') {
           mainResult = data.result;
         }
@@ -128,4 +127,11 @@ const importPlaces = async () => {
   }
 };
 
-importPlaces();
+importPlaces().then(() => {
+  try {
+    fs.writeFileSync(PLACE_IDS_PATH, '[]');
+    console.log('🧹 place_ids.json wurde erfolgreich geleert.');
+  } catch (err) {
+    console.error('⚠️ Fehler beim Leeren der place_ids.json:', err);
+  }
+});
