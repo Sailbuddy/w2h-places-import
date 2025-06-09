@@ -34,7 +34,7 @@ async function checkIfLocationExists(placeId) {
   const { data, error } = await supabase
     .from('locations')
     .select('id')
-    .eq('place_id', placeId)
+    .eq('google_place_id', placeId) // ✅ korrektes Feld
     .maybeSingle();
 
   if (error) {
@@ -46,12 +46,12 @@ async function checkIfLocationExists(placeId) {
 }
 
 async function insertLocation(placeId) {
-  // Beispiel-Insert – muss durch echten Google Places Fetch ersetzt werden
+  // Beispiel-Insert – später ersetzt durch echten Google Places-Fetch
   const dummyName = `Ort für ${placeId}`;
 
   const { data, error } = await supabase
     .from('locations')
-    .insert([{ place_id: placeId, display_name: dummyName }]);
+    .insert([{ google_place_id: placeId, display_name: dummyName }]); // ✅ korrektes Feld
 
   if (error) {
     console.error(`❌ Fehler beim Einfügen von ${placeId}:`, error.message);
@@ -61,11 +61,11 @@ async function insertLocation(placeId) {
 }
 
 async function updateLocation(placeId) {
-  // Beispiel-Update – hier könnten später Öffnungszeiten etc. aktualisiert werden
+  // Beispiel-Update – später erweiterbar
   const { error } = await supabase
     .from('locations')
     .update({ updated_at: new Date().toISOString() })
-    .eq('place_id', placeId);
+    .eq('google_place_id', placeId); // ✅ korrektes Feld
 
   if (error) {
     console.error(`❌ Fehler beim Aktualisieren von ${placeId}:`, error.message);
