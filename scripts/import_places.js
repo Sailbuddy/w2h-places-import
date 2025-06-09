@@ -59,7 +59,7 @@ async function insertLocation(placeId) {
     .insert([{
       google_place_id: placeId,
       display_name: dummyName,
-      category_id: getCategoryIdOrDefault(null) // 🌟 Saubere Fallback-Logik
+      category_id: getCategoryIdOrDefault(null)
     }]);
 
   if (error) {
@@ -72,7 +72,11 @@ async function insertLocation(placeId) {
 async function updateLocation(placeId) {
   const { error } = await supabase
     .from('locations')
-    .update({ updated_at: new Date().toISOString() })
+    .update({
+      display_name: `Aktualisiert für ${placeId}`,
+      updated_at: new Date().toISOString(),
+      category_id: getCategoryIdOrDefault(null)
+    })
     .eq('google_place_id', placeId);
 
   if (error) {
@@ -89,13 +93,13 @@ async function updateLocation(placeId) {
 
     if (isAutoRun) {
       if (exists) {
-        await updateLocation(placeId);
+        await updateLocation(placeId);  // 🛠️ Überschreiben
       } else {
-        await insertLocation(placeId);
+        await insertLocation(placeId);  // ➕ Neu einfügen
       }
     } else {
       if (!exists) {
-        await insertLocation(placeId);
+        await insertLocation(placeId);  // ➕ Nur wenn nicht vorhanden
       } else {
         console.log(`⚠️ Bereits vorhanden, übersprungen: ${placeId}`);
       }
