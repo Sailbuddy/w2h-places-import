@@ -1,9 +1,9 @@
-name: Import Google Places
+name: Import Google Places (Auto-Update)
 
 on:
   schedule:
     - cron: '0 0 * * *'  # Läuft täglich um 00:00 UTC
-  workflow_dispatch:     # Manuelles Auslösen jederzeit möglich
+  workflow_dispatch:     # Optional manuell ausführbar
 
 jobs:
   import:
@@ -26,5 +26,5 @@ jobs:
       - name: Install dependencies
         run: npm install axios dotenv @supabase/supabase-js
 
-      - name: Run import script
-        run: node scripts/import_places.js
+      - name: Run import script (archive mode)
+        run: node scripts/import_places.js archive
