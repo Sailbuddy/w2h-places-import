@@ -34,7 +34,7 @@ async function checkIfLocationExists(placeId) {
   const { data, error } = await supabase
     .from('locations')
     .select('id')
-    .eq('google_place_id', placeId) // ✅ korrektes Feld
+    .eq('google_place_id', placeId)
     .maybeSingle();
 
   if (error) {
@@ -46,12 +46,15 @@ async function checkIfLocationExists(placeId) {
 }
 
 async function insertLocation(placeId) {
-  // Beispiel-Insert – später ersetzt durch echten Google Places-Fetch
   const dummyName = `Ort für ${placeId}`;
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('locations')
-    .insert([{ google_place_id: placeId, display_name: dummyName }]); // ✅ korrektes Feld
+    .insert([{
+      google_place_id: placeId,
+      display_name: dummyName,
+      category_id: 9  // 🟢 Dummy-Wert, damit NOT NULL erfüllt wird
+    }]);
 
   if (error) {
     console.error(`❌ Fehler beim Einfügen von ${placeId}:`, error.message);
@@ -61,11 +64,10 @@ async function insertLocation(placeId) {
 }
 
 async function updateLocation(placeId) {
-  // Beispiel-Update – später erweiterbar
   const { error } = await supabase
     .from('locations')
     .update({ updated_at: new Date().toISOString() })
-    .eq('google_place_id', placeId); // ✅ korrektes Feld
+    .eq('google_place_id', placeId);
 
   if (error) {
     console.error(`❌ Fehler beim Aktualisieren von ${placeId}:`, error.message);
@@ -80,14 +82,12 @@ async function updateLocation(placeId) {
     const exists = await checkIfLocationExists(placeId);
 
     if (isAutoRun) {
-      // Nachtlauf: Update oder Insert
       if (exists) {
         await updateLocation(placeId);
       } else {
         await insertLocation(placeId);
       }
     } else {
-      // Manuell: Nur neue Einträge
       if (!exists) {
         await insertLocation(placeId);
       } else {
