@@ -9,6 +9,12 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// --- Kategorie-Fallback ---
+function getCategoryIdOrDefault(categoryId) {
+  // Falls keine Kategorie bekannt ist → Standardwert 9 ("nicht zugeordnet")
+  return categoryId || 9;
+}
+
 // --- Modus erkennen ---
 const mode = process.argv[2]; // z. B. "archive"
 const isAutoRun = mode === 'archive';
@@ -53,7 +59,7 @@ async function insertLocation(placeId) {
     .insert([{
       google_place_id: placeId,
       display_name: dummyName,
-      category_id: 9  // 🟢 Dummy-Wert, damit NOT NULL erfüllt wird
+      category_id: getCategoryIdOrDefault(null) // 🌟 Saubere Fallback-Logik
     }]);
 
   if (error) {
