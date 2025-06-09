@@ -1,9 +1,7 @@
-name: Import Google Places
+name: Manueller Import Google Places
 
 on:
-  schedule:
-    - cron: '0 0 * * *'  # Läuft täglich um 00:00 UTC
-  workflow_dispatch:     # Manuelles Auslösen jederzeit möglich
+  workflow_dispatch:     # Nur manuell ausführbar
 
 jobs:
   import:
