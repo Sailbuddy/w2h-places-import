@@ -38,7 +38,7 @@ async function insertLocation(placeId) {
   const categoryId = 9; // Dummy – wird später durch echte Logik ersetzt
 
   const { data, error } = await supabase.from('locations').insert([{
-    place_id: placeId,
+    google_place_id: placeId,
     display_name: placeDetails.name,
     address: placeDetails.address,
     website: placeDetails.website,
