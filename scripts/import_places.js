@@ -1,110 +1,115 @@
-const fs = require('fs');
-const path = require('path');
-const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
+import fetch from 'node-fetch';
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+import fs from 'fs';
 
-// --- Setup Supabase Client ---
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+dotenv.config();
 
-// --- Kategorie-Fallback ---
-function getCategoryIdOrDefault(categoryId) {
-  // Falls keine Kategorie bekannt ist → Standardwert 9 ("nicht zugeordnet")
-  return categoryId || 9;
-}
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-// --- Modus erkennen ---
-const mode = process.argv[2]; // z. B. "archive"
-const isAutoRun = mode === 'archive';
+// 🔎 Abruf der Live-Daten von Google Places
+async function fetchGooglePlaceData(placeId) {
+  const apiKey = process.env.GOOGLE_API_KEY;
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_address,website,url,types,opening_hours&language=de&key=${apiKey}`;
 
-console.log(`🟡 Starte Import im Modus: ${isAutoRun ? 'ARCHIV (auto-update)' : 'MANUELL (nur neu)'}`);
+  const response = await fetch(url);
+  const data = await response.json();
 
-// --- Datei wählen ---
-const filePath = isAutoRun
-  ? path.join(__dirname, '../data/place_ids_archive.json')
-  : path.join(__dirname, '../data/place_ids.json');
-
-// --- Daten einlesen ---
-let placeIds;
-try {
-  placeIds = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-} catch (error) {
-  console.error(`❌ Fehler beim Lesen der Datei ${filePath}:`, error.message);
-  process.exit(1);
-}
-
-// --- Importlogik ---
-async function checkIfLocationExists(placeId) {
-  const { data, error } = await supabase
-    .from('locations')
-    .select('id')
-    .eq('google_place_id', placeId)
-    .maybeSingle();
-
-  if (error) {
-    console.error(`❌ Fehler beim Prüfen von ${placeId}:`, error.message);
-    return false;
+  if (data.status !== 'OK') {
+    throw new Error(`❌ Fehler beim Abruf der Place Details: ${data.status}`);
   }
 
-  return !!data;
+  const result = data.result;
+
+  return {
+    name: result.name || '(ohne Namen)',
+    address: result.formatted_address || '(keine Adresse)',
+    website: result.website || null,
+    maps_url: result.url || null,
+    types: result.types || [],
+    opening_hours: result.opening_hours || null
+  };
 }
 
+// 📥 Hauptfunktion zum Einfügen einer Location
 async function insertLocation(placeId) {
-  const dummyName = `Ort für ${placeId}`;
+  const placeDetails = await fetchGooglePlaceData(placeId);
 
-  const { error } = await supabase
-    .from('locations')
-    .insert([{
-      google_place_id: placeId,
-      display_name: dummyName,
-      category_id: getCategoryIdOrDefault(null)
-    }]);
+  const categoryId = 9; // Dummy – wird später durch echte Logik ersetzt
 
-  if (error) {
-    console.error(`❌ Fehler beim Einfügen von ${placeId}:`, error.message);
-  } else {
-    console.log(`✅ Neu eingefügt: ${placeId}`);
-  }
-}
-
-async function updateLocation(placeId) {
-  const { error } = await supabase
-    .from('locations')
-    .update({
-      display_name: `Aktualisiert für ${placeId}`,
-      updated_at: new Date().toISOString(),
-      category_id: getCategoryIdOrDefault(null)
-    })
-    .eq('google_place_id', placeId);
+  const { data, error } = await supabase.from('locations').insert([{
+    place_id: placeId,
+    display_name: placeDetails.name,
+    address: placeDetails.address,
+    website: placeDetails.website,
+    maps_url: placeDetails.maps_url,
+    category_id: categoryId,
+    opening_hours: placeDetails.opening_hours ? JSON.stringify(placeDetails.opening_hours) : null
+  }]).select().single();
 
   if (error) {
-    console.error(`❌ Fehler beim Aktualisieren von ${placeId}:`, error.message);
-  } else {
-    console.log(`🔁 Aktualisiert: ${placeId}`);
+    throw new Error(`❌ Fehler beim Einfügen in 'locations': ${error.message}`);
   }
+
+  console.log(`✅ Ort eingefügt: ${placeDetails.name}`);
+  return data;
 }
 
-// --- Hauptlauf ---
-(async () => {
+// 🌍 Einfügen der Sprachvarianten (Platzhalter)
+async function insertLocationValues(locationId, translations) {
+  const { error } = await supabase.from('location_values').insert([
+    {
+      location_id: locationId,
+      lang: 'de',
+      name: translations.de
+    },
+    {
+      location_id: locationId,
+      lang: 'en',
+      name: translations.en
+    },
+    {
+      location_id: locationId,
+      lang: 'hr',
+      name: translations.hr
+    },
+    {
+      location_id: locationId,
+      lang: 'it',
+      name: translations.it
+    }
+  ]);
+
+  if (error) {
+    throw new Error(`❌ Fehler beim Einfügen in 'location_values': ${error.message}`);
+  }
+
+  console.log(`🌍 Sprachvarianten gespeichert`);
+}
+
+// 🔁 Verarbeitet alle Place IDs aus JSON-Datei
+async function processPlaces() {
+  const raw = fs.readFileSync('place_ids.json');
+  const placeIds = JSON.parse(raw);
+
   for (const placeId of placeIds) {
-    const exists = await checkIfLocationExists(placeId);
+    try {
+      const location = await insertLocation(placeId);
 
-    if (isAutoRun) {
-      if (exists) {
-        await updateLocation(placeId);  // 🛠️ Überschreiben
-      } else {
-        await insertLocation(placeId);  // ➕ Neu einfügen
-      }
-    } else {
-      if (!exists) {
-        await insertLocation(placeId);  // ➕ Nur wenn nicht vorhanden
-      } else {
-        console.log(`⚠️ Bereits vorhanden, übersprungen: ${placeId}`);
-      }
+      await insertLocationValues(location.id, {
+        de: location.display_name,
+        en: location.display_name,
+        hr: location.display_name,
+        it: location.display_name
+      });
+
+    } catch (error) {
+      console.error(error.message);
     }
   }
 
-  console.log('✅ Importlauf abgeschlossen.');
-})();
+  console.log('✅ Importlauf abgeschlossen');
+}
+
+// ▶️ Start
+processPlaces();
