@@ -22,7 +22,7 @@ jobs:
           node-version: '20'
 
       - name: 📦 Install Dependencies
-        run: npm install
+        run: npm install @supabase/supabase-js node-fetch dotenv
 
       - name: ▶️ Run Import Script
         run: node scripts/import_places.js
