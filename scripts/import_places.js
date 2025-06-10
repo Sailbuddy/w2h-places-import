@@ -87,9 +87,15 @@ async function insertLocationValues(locationId, translations) {
   console.log(`🌍 Sprachvarianten gespeichert`);
 }
 
-// 🔁 Verarbeitet alle Place IDs aus JSON-Datei
+// 🔁 Verarbeitet alle Place IDs aus JSON-Datei (steuerbar über Umgebungsvariable)
 async function processPlaces() {
-  const raw = fs.readFileSync('place_ids.json');
+  const inputFile = process.env.PLACE_IDS_FILE || 'place_ids.json';
+
+  if (!fs.existsSync(inputFile)) {
+    throw new Error(`❌ Datei ${inputFile} nicht gefunden.`);
+  }
+
+  const raw = fs.readFileSync(inputFile);
   const placeIds = JSON.parse(raw);
 
   for (const placeId of placeIds) {
@@ -108,7 +114,7 @@ async function processPlaces() {
     }
   }
 
-  console.log('✅ Importlauf abgeschlossen');
+  console.log(`✅ Importlauf abgeschlossen für Datei: ${inputFile}`);
 }
 
 // ▶️ Start
