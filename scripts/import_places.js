@@ -26,8 +26,8 @@ async function fetchGooglePlaceData(placeId) {
     address: result.formatted_address || '(keine Adresse)',
     website: result.website || null,
     maps_url: result.url || null,
-    types: result.types || [],
-    opening_hours: result.opening_hours || null
+    types: result.types || []
+    // Öffnungszeiten werden nicht hier eingefügt, sondern später dynamisch
   };
 }
 
@@ -43,8 +43,8 @@ async function insertLocation(placeId) {
     address: placeDetails.address,
     website: placeDetails.website,
     maps_url: placeDetails.maps_url,
-    category_id: categoryId,
-    opening_hours: placeDetails.opening_hours ? JSON.stringify(placeDetails.opening_hours) : null
+    category_id: categoryId
+    // kein opening_hours Feld hier mehr
   }]).select().single();
 
   if (error) {
@@ -87,6 +87,12 @@ async function insertLocationValues(locationId, translations) {
   console.log(`🌍 Sprachvarianten gespeichert`);
 }
 
+// Beispiel für dynamisches Einfügen von Attributen (wird extern eingebunden)
+async function insertLocationAttributes(locationId, placeDetails) {
+  // Diese Funktion solltest du separat implementieren,
+  // um Felder wie opening_hours, rating usw. dynamisch zu speichern
+}
+
 // 🔁 Verarbeitet alle Place IDs aus JSON-Datei im /data/ Verzeichnis
 async function processPlaces() {
   const inputFile = process.env.PLACE_IDS_FILE || 'place_ids.json';
@@ -109,6 +115,9 @@ async function processPlaces() {
         hr: location.display_name,
         it: location.display_name
       });
+
+      // Dynamisches Attribut-Einfügen
+      // await insertLocationAttributes(location.id, placeDetails);
 
     } catch (error) {
       console.error(error.message);
