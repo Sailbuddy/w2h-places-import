@@ -1,9 +1,9 @@
-name: 🌙 Nightly Import Google Places
+name: 📥 Import Google Places mit Attribut-Scan
 
 on:
   schedule:
-    - cron: '0 2 * * *' # ⏰ Täglich um 02:00 UTC (= 04:00 MESZ)
-  workflow_dispatch: # Optional manuell auslösbar
+    - cron: '0 2 * * *'  # täglicher Lauf um 02:00 UTC
+  workflow_dispatch:      # manuelles Auslösen möglich
 
 jobs:
   import:
@@ -16,16 +16,19 @@ jobs:
       PLACE_IDS_FILE: place_ids_archive.json
 
     steps:
-      - name: 📥 Checkout Repository
+      - name: Checkout Repo
         uses: actions/checkout@v3
 
-      - name: 🧰 Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      - name: 📦 Install Dependencies
+      - name: Install Dependencies
         run: npm install @supabase/supabase-js node-fetch dotenv
 
-      - name: ▶️ Run Import Script
+      - name: Scan Attributes
+        run: node scripts/attribute_scan.js
+
+      - name: Import Locations
         run: node scripts/import_places.js
