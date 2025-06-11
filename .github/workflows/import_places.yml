@@ -13,7 +13,7 @@ jobs:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-      PLACE_IDS_FILE: place_ids_archive.json
+      PLACE_IDS_FILE: data/place_ids_archive.json   # Pfad zum JSON korrigiert
 
     steps:
       - name: Checkout Repo
