@@ -26,6 +26,7 @@ async function debugPlaceDetails(placeId, lang = 'de') {
   }
 }
 
-const testPlaceId = 'ChIJIYYKgHJre0cR7JUxzFDt124'; // Beispiel-Place-ID
+// Beispiel-Place-ID zum Testen (ersetze mit deiner Place ID)
+const testPlaceId = 'ChIJPx-enXFre0cR9aITmOoWd5o';
 
 debugPlaceDetails(testPlaceId, 'de');
