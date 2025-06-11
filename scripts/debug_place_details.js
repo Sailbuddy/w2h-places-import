@@ -27,6 +27,6 @@ async function debugPlaceDetails(placeId, lang = 'de') {
 }
 
 // Beispiel-Aufruf mit Place ID als Argument
-const testPlaceId = 'ChIJIYYKgHJre0cR7JUxzFDt124'; // Ersetze durch deine Place ID
+const testPlaceId = 'ChIJPx-enXFre0cR9aITmOoWd5o'; // Ersetze durch deine Place ID
 
 debugPlaceDetails(testPlaceId, 'de');
