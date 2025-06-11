@@ -5,7 +5,7 @@ dotenv.config();
 
 async function debugPlaceDetails(placeId, lang = 'de') {
   const apiKey = process.env.GOOGLE_API_KEY;
-  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=name,formatted_address,website,url,types,opening_hours,phone_number,rating,price_level&language=${lang}&key=${apiKey}`;
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=name,formatted_address,website,url,types,opening_hours,formatted_phone_number,rating,price_level&language=${lang}&key=${apiKey}`;
 
   console.log('Request URL:', url);
 
@@ -26,7 +26,6 @@ async function debugPlaceDetails(placeId, lang = 'de') {
   }
 }
 
-// Beispiel-Aufruf mit Place ID als Argument
-const testPlaceId = 'ChIJPx-enXFre0cR9aITmOoWd5o'; // Ersetze durch deine Place ID
+const testPlaceId = 'ChIJIYYKgHJre0cR7JUxzFDt124'; // Beispiel-Place-ID
 
 debugPlaceDetails(testPlaceId, 'de');
