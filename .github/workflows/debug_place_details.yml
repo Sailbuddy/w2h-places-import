@@ -1,4 +1,25 @@
-- name: Debug Google Place Details
-  run: node scripts/debug_place_details.js
-  env:
-    GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+name: Debug Google Place Details
+
+on:
+  workflow_dispatch: # manuelles Auslösen
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install node-fetch dotenv
+
+      - name: Run Debug Script
+        run: node scripts/debug_place_details.js
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
