@@ -7,141 +7,107 @@ dotenv.config();
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-// Hilfsfunktion: Sprachen, die du unterstützt
-const supportedLangs = ['de', 'en', 'it', 'hr', 'fr'];
-
-// Abruf der Google Places-Daten (mit mehreren Sprachen)
-async function fetchGooglePlaceData(placeId, lang) {
+// 🔎 Abruf der Live-Daten von Google Places
+async function fetchGooglePlaceData(placeId, lang = 'de') {
   const apiKey = process.env.GOOGLE_API_KEY;
-  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_address,website,url,types,opening_hours,phone_number,rating,price_level&language=${lang}&key=${apiKey}`;
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=name,formatted_address,website,url,types,opening_hours,formatted_phone_number,rating,price_level&language=${lang}&key=${apiKey}`;
 
   const response = await fetch(url);
   const data = await response.json();
 
   if (data.status !== 'OK') {
-    throw new Error(`Fehler beim Abruf der Place Details für Sprache ${lang}: ${data.status}`);
+    throw new Error(`❌ Fehler beim Abruf der Place Details: ${data.status}`);
   }
 
-  return data.result;
+  const result = data.result;
+
+  return {
+    name: result.name || '(ohne Namen)',
+    address: result.formatted_address || '(keine Adresse)',
+    website: result.website || null,
+    maps_url: result.url || null,
+    types: result.types || [],
+    opening_hours: result.opening_hours || null,
+    phone_number: result.formatted_phone_number || null,
+    rating: result.rating || null,
+    price_level: result.price_level || null
+  };
 }
 
-// Einfügen oder Updaten der Location mit festen Spalten
-async function upsertLocation(placeId, placeDetailsByLang) {
-  // Extrahiere aus placeDetailsByLang die festen Felder je Sprache
-  const locationData = {
-    google_place_id: placeId,
-    category_id: 9, // Dummy, anpassen wenn Logik fertig
-    name_de: placeDetailsByLang.de?.name || null,
-    name_en: placeDetailsByLang.en?.name || null,
-    name_it: placeDetailsByLang.it?.name || null,
-    name_hr: placeDetailsByLang.hr?.name || null,
-    name_fr: placeDetailsByLang.fr?.name || null,
-    description_de: placeDetailsByLang.de?.formatted_address || null,
-    description_en: placeDetailsByLang.en?.formatted_address || null,
-    description_it: placeDetailsByLang.it?.formatted_address || null,
-    description_hr: placeDetailsByLang.hr?.formatted_address || null,
-    description_fr: placeDetailsByLang.fr?.formatted_address || null,
-    address: placeDetailsByLang.de?.formatted_address || null,
-    phone: placeDetailsByLang.de?.phone_number || null,
-    website: placeDetailsByLang.de?.website || null,
-    rating: placeDetailsByLang.de?.rating || null,
-    price_level: placeDetailsByLang.de?.price_level || null,
-    maps_url: placeDetailsByLang.de?.url || null
-  };
+// 📥 Hauptfunktion zum Einfügen einer Location
+async function insertLocation(placeId) {
+  const placeDetails = await fetchGooglePlaceData(placeId);
 
-  // Upsert in locations (insert oder update falls google_place_id schon existiert)
-  const { data, error } = await supabase
-    .from('locations')
-    .upsert(locationData, { onConflict: 'google_place_id' })
-    .select()
-    .single();
+  const categoryId = 9; // Dummy – später anpassen oder automatisch bestimmen
+
+  const { data, error } = await supabase.from('locations').upsert({
+    google_place_id: placeId,
+    display_name: placeDetails.name,
+    name_de: placeDetails.name,
+    address: placeDetails.address,
+    website: placeDetails.website,
+    maps_url: placeDetails.maps_url,
+    category_id: categoryId,
+    rating: placeDetails.rating,
+    price_level: placeDetails.price_level,
+    phone: placeDetails.phone_number
+  }, { onConflict: 'google_place_id' }).select().single();
 
   if (error) {
-    throw new Error(`Fehler beim Upsert der Location: ${error.message}`);
+    throw new Error(`❌ Fehler beim Upsert in 'locations': ${error.message}`);
   }
 
+  console.log(`✅ Ort eingefügt/aktualisiert: ${placeDetails.name}`);
   return data;
 }
 
-// Flexible Attribute (alle Sprachen) in location_values speichern
-async function insertLocationAttributes(locationId, placeDetailsByLang) {
-  for (const lang of supportedLangs) {
-    const placeDetails = placeDetailsByLang[lang];
-    if (!placeDetails) continue;
+// 🌍 Einfügen der Sprachvarianten (Platzhalter)
+async function insertLocationValues(locationId, translations) {
+  // Lösche ggf. bestehende Einträge für diese Location und Sprachen vor dem Einfügen
+  await supabase.from('location_values').delete().eq('location_id', locationId);
 
-    // Hier Beispiel für dynamisches Einfügen einiger Attribute (erweitern nach Bedarf)
-    const attributesToSave = {
-      opening_hours: placeDetails.opening_hours ? JSON.stringify(placeDetails.opening_hours) : null,
-      // weitere dynamische Attribute hier ergänzen ...
-    };
+  const inserts = [];
 
-    for (const [key, value] of Object.entries(attributesToSave)) {
-      if (value === null) continue;
-
-      // Insert oder Update in location_values, je nach Schema anpassen
-      const { error } = await supabase.from('location_values').upsert({
-        location_id: locationId,
-        key,
-        value_text: value,
-        language_code: lang
-      }, { onConflict: ['location_id', 'key', 'language_code'] });
-
-      if (error) {
-        console.error(`Fehler beim Speichern von ${key} für Sprache ${lang}: ${error.message}`);
-      }
-    }
+  for (const [lang, name] of Object.entries(translations)) {
+    inserts.push({
+      location_id: locationId,
+      lang: lang,
+      name: name
+    });
   }
+
+  const { error } = await supabase.from('location_values').insert(inserts);
+
+  if (error) {
+    throw new Error(`❌ Fehler beim Einfügen in 'location_values': ${error.message}`);
+  }
+
+  console.log(`🌍 Sprachvarianten gespeichert für Location ID ${locationId}`);
 }
 
-// Hauptfunktion: verarbeitet Place IDs, holt mehrsprachige Daten, speichert Location + Attribute
+// 🔁 Verarbeitet alle Place IDs aus JSON-Datei
 async function processPlaces() {
-  const inputFile = process.env.PLACE_IDS_FILE || 'place_ids.json';
-  const fullPath = `data/${inputFile}`;
-
-  if (!fs.existsSync(fullPath)) {
-    throw new Error(`Datei ${fullPath} nicht gefunden.`);
-  }
-
-  const raw = fs.readFileSync(fullPath);
+  const raw = fs.readFileSync('data/place_ids.json');
   const placeIds = JSON.parse(raw);
 
   for (const placeId of placeIds) {
     try {
-      // Für jede Sprache Place Details holen
-      const placeDetailsByLang = {};
-      for (const lang of supportedLangs) {
-        try {
-          placeDetailsByLang[lang] = await fetchGooglePlaceData(placeId, lang);
-        } catch (e) {
-          console.warn(`Warnung: Keine Daten für ${placeId} in Sprache ${lang}: ${e.message}`);
-        }
-      }
+      const location = await insertLocation(placeId);
 
-      // Location upserten
-      const location = await upsertLocation(placeId, placeDetailsByLang);
+      await insertLocationValues(location.id, {
+        de: location.name_de,
+        en: location.name_en || location.name_de,
+        hr: location.name_hr || location.name_de,
+        it: location.name_it || location.name_de,
+        fr: location.name_fr || location.name_de
+      });
 
-      // Sprachvarianten für Name in location_values (optional, je nach Schema)
-      for (const lang of supportedLangs) {
-        if (!placeDetailsByLang[lang]) continue;
-        const { error } = await supabase.from('location_values').upsert({
-          location_id: location.id,
-          key: 'display_name',
-          value_text: placeDetailsByLang[lang].name,
-          language_code: lang
-        }, { onConflict: ['location_id', 'key', 'language_code'] });
-        if (error) {
-          console.error(`Fehler beim Speichern display_name für ${lang}: ${error.message}`);
-        }
-      }
-
-      // Flexible Attribute speichern
-      await insertLocationAttributes(location.id, placeDetailsByLang);
-
-      console.log(`✅ Import erfolgreich für Place ID: ${placeId}`);
     } catch (error) {
-      console.error(`❌ Fehler bei Place ID ${placeId}: ${error.message}`);
+      console.error(error.message);
     }
   }
+
+  console.log('✅ Importlauf abgeschlossen');
 }
 
 // ▶️ Start
