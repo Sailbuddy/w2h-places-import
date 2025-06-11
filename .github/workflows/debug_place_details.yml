@@ -1,7 +1,7 @@
 name: Debug Google Place Details
 
 on:
-  workflow_dispatch: # manuelles Auslösen
+  workflow_dispatch:
 
 jobs:
   debug:
