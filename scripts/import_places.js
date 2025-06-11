@@ -8,75 +8,79 @@ dotenv.config();
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 // 🔎 Abruf der Live-Daten von Google Places
-async function fetchGooglePlaceData(placeId, lang = 'de') {
+async function fetchGooglePlaceData(placeId, language) {
   const apiKey = process.env.GOOGLE_API_KEY;
-  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=name,formatted_address,website,url,types,opening_hours,formatted_phone_number,rating,price_level&language=${lang}&key=${apiKey}`;
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_address,website,url,types,opening_hours,phone_number,rating,price_level&language=${language}&key=${apiKey}`;
 
   const response = await fetch(url);
   const data = await response.json();
 
   if (data.status !== 'OK') {
-    throw new Error(`❌ Fehler beim Abruf der Place Details: ${data.status}`);
+    throw new Error(`❌ Fehler beim Abruf der Place Details für Sprache ${language}: ${data.status}`);
   }
 
-  const result = data.result;
-
-  return {
-    name: result.name || '(ohne Namen)',
-    address: result.formatted_address || '(keine Adresse)',
-    website: result.website || null,
-    maps_url: result.url || null,
-    types: result.types || [],
-    opening_hours: result.opening_hours || null,
-    phone_number: result.formatted_phone_number || null,
-    rating: result.rating || null,
-    price_level: result.price_level || null
-  };
+  return data.result;
 }
 
-// 📥 Hauptfunktion zum Einfügen einer Location
-async function insertLocation(placeId) {
-  const placeDetails = await fetchGooglePlaceData(placeId);
+// 📥 Hauptfunktion zum Einfügen oder Updaten einer Location
+async function insertOrUpdateLocation(placeEntry, placeDetails) {
+  const displayName = placeEntry.preferredName || placeDetails.name || '(ohne Namen)';
 
-  const categoryId = 9; // Dummy – später anpassen oder automatisch bestimmen
-
-  const { data, error } = await supabase.from('locations').upsert({
-    google_place_id: placeId,
-    display_name: placeDetails.name,
-    name_de: placeDetails.name,
-    address: placeDetails.address,
-    website: placeDetails.website,
-    maps_url: placeDetails.maps_url,
-    category_id: categoryId,
-    rating: placeDetails.rating,
-    price_level: placeDetails.price_level,
-    phone: placeDetails.phone_number
-  }, { onConflict: 'google_place_id' }).select().single();
+  const { data, error } = await supabase.from('locations').upsert([{
+    google_place_id: placeEntry.placeId,
+    display_name: displayName,
+    address: placeDetails.formatted_address || null,
+    website: placeDetails.website || null,
+    maps_url: placeDetails.url || null,
+    category_id: 9, // Dummy – später anpassen
+    phone: placeDetails.phone_number || null,
+    rating: placeDetails.rating || null,
+    price_level: placeDetails.price_level || null,
+  }], { onConflict: 'google_place_id' }).select().single();
 
   if (error) {
-    throw new Error(`❌ Fehler beim Upsert in 'locations': ${error.message}`);
+    throw new Error(`❌ Fehler beim Upsert der Location: ${error.message}`);
   }
 
-  console.log(`✅ Ort eingefügt/aktualisiert: ${placeDetails.name}`);
+  console.log(`✅ Import erfolgreich für Place ID: ${placeEntry.placeId} (${displayName})`);
+
   return data;
 }
 
-// 🌍 Einfügen der Sprachvarianten (Platzhalter)
-async function insertLocationValues(locationId, translations) {
-  // Lösche ggf. bestehende Einträge für diese Location und Sprachen vor dem Einfügen
-  await supabase.from('location_values').delete().eq('location_id', locationId);
+// 🌍 Sprachvarianten für Name und Beschreibung einfügen
+async function insertLocationValues(locationId, placeDetails) {
+  // Sprachen, die wir unterstützen
+  const languages = ['de', 'en', 'it', 'hr', 'fr'];
 
+  // Wir speichern jeweils Name und Description pro Sprache (wenn vorhanden)
   const inserts = [];
 
-  for (const [lang, name] of Object.entries(translations)) {
-    inserts.push({
-      location_id: locationId,
-      lang: lang,
-      name: name
-    });
+  for (const lang of languages) {
+    const nameKey = `name_${lang}`;
+    const descriptionKey = `description_${lang}`;
+
+    if (placeDetails[ nameKey ]) {
+      inserts.push({
+        location_id: locationId,
+        key: 'name',
+        value_text: placeDetails[ nameKey ],
+        language_code: lang
+      });
+    }
+
+    if (placeDetails[ descriptionKey ]) {
+      inserts.push({
+        location_id: locationId,
+        key: 'description',
+        value_text: placeDetails[ descriptionKey ],
+        language_code: lang
+      });
+    }
   }
 
-  const { error } = await supabase.from('location_values').insert(inserts);
+  if (inserts.length === 0) return;
+
+  const { error } = await supabase.from('location_values').upsert(inserts);
 
   if (error) {
     throw new Error(`❌ Fehler beim Einfügen in 'location_values': ${error.message}`);
@@ -87,23 +91,47 @@ async function insertLocationValues(locationId, translations) {
 
 // 🔁 Verarbeitet alle Place IDs aus JSON-Datei
 async function processPlaces() {
-  const raw = fs.readFileSync('data/place_ids.json');
-  const placeIds = JSON.parse(raw);
+  const raw = fs.readFileSync('data/place_ids.json', 'utf-8');
+  const rawData = JSON.parse(raw);
 
-  for (const placeId of placeIds) {
+  // Array von Objekten mit placeId und optional preferredName
+  const placeEntries = rawData.map(entry => {
+    if (typeof entry === 'string') {
+      return { placeId: entry, preferredName: null };
+    }
+    return { placeId: entry.placeId, preferredName: entry.preferredName || null };
+  });
+
+  for (const placeEntry of placeEntries) {
     try {
-      const location = await insertLocation(placeId);
+      // Für Sprachen alle Daten abfragen und später speichern
+      const placeDetailsDe = await fetchGooglePlaceData(placeEntry.placeId, 'de');
+      const placeDetailsEn = await fetchGooglePlaceData(placeEntry.placeId, 'en');
+      const placeDetailsIt = await fetchGooglePlaceData(placeEntry.placeId, 'it');
+      const placeDetailsHr = await fetchGooglePlaceData(placeEntry.placeId, 'hr');
+      const placeDetailsFr = await fetchGooglePlaceData(placeEntry.placeId, 'fr');
 
-      await insertLocationValues(location.id, {
-        de: location.name_de,
-        en: location.name_en || location.name_de,
-        hr: location.name_hr || location.name_de,
-        it: location.name_it || location.name_de,
-        fr: location.name_fr || location.name_de
-      });
+      // Location mit preferredName oder Name aus Google einfügen/updaten
+      const location = await insertOrUpdateLocation(placeEntry, placeDetailsDe);
+
+      // Sprachvarianten zusammenbauen
+      const placeDetailsAll = {
+        name_de: placeDetailsDe.name || null,
+        description_de: placeDetailsDe.formatted_address || null,  // als Beispiel Beschreibung
+        name_en: placeDetailsEn.name || null,
+        description_en: placeDetailsEn.formatted_address || null,
+        name_it: placeDetailsIt.name || null,
+        description_it: placeDetailsIt.formatted_address || null,
+        name_hr: placeDetailsHr.name || null,
+        description_hr: placeDetailsHr.formatted_address || null,
+        name_fr: placeDetailsFr.name || null,
+        description_fr: placeDetailsFr.formatted_address || null,
+      };
+
+      await insertLocationValues(location.id, placeDetailsAll);
 
     } catch (error) {
-      console.error(error.message);
+      console.error(`❌ Fehler bei Place ID ${placeEntry.placeId}: ${error.message}`);
     }
   }
 
