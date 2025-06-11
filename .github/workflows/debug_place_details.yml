@@ -1,0 +1,4 @@
+- name: Debug Google Place Details
+  run: node scripts/debug_place_details.js
+  env:
+    GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
