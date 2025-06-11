@@ -75,6 +75,14 @@ async function insertAttributeDefinition(key, input_type) {
     key,
     name_de: key,
     description_de: '',
+    name_en: key,
+    description_en: '',
+    name_it: key,
+    description_it: '',
+    name_hr: key,
+    description_hr: '',
+    name_fr: key,
+    description_fr: '',
     input_type,
     is_active: false // Neu = inaktiv
   });
