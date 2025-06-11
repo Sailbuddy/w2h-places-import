@@ -10,7 +10,7 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 // 🔎 Abruf der Live-Daten von Google Places
 async function fetchGooglePlaceData(placeId, language) {
   const apiKey = process.env.GOOGLE_API_KEY;
-  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_address,website,url,types,opening_hours,phone_number,rating,price_level&language=${language}&key=${apiKey}`;
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_address,website,url,types,opening_hours,formatted_phone_number,rating,price_level&language=${language}&key=${apiKey}`;
 
   const response = await fetch(url);
   const data = await response.json();
@@ -33,7 +33,7 @@ async function insertOrUpdateLocation(placeEntry, placeDetails) {
     website: placeDetails.website || null,
     maps_url: placeDetails.url || null,
     category_id: 9, // Dummy – später anpassen
-    phone: placeDetails.phone_number || null,
+    phone: placeDetails.formatted_phone_number || null,
     rating: placeDetails.rating || null,
     price_level: placeDetails.price_level || null,
   }], { onConflict: 'google_place_id' }).select().single();
@@ -59,20 +59,20 @@ async function insertLocationValues(locationId, placeDetails) {
     const nameKey = `name_${lang}`;
     const descriptionKey = `description_${lang}`;
 
-    if (placeDetails[ nameKey ]) {
+    if (placeDetails[nameKey]) {
       inserts.push({
         location_id: locationId,
         key: 'name',
-        value_text: placeDetails[ nameKey ],
+        value_text: placeDetails[nameKey],
         language_code: lang
       });
     }
 
-    if (placeDetails[ descriptionKey ]) {
+    if (placeDetails[descriptionKey]) {
       inserts.push({
         location_id: locationId,
         key: 'description',
-        value_text: placeDetails[ descriptionKey ],
+        value_text: placeDetails[descriptionKey],
         language_code: lang
       });
     }
@@ -91,7 +91,8 @@ async function insertLocationValues(locationId, placeDetails) {
 
 // 🔁 Verarbeitet alle Place IDs aus JSON-Datei
 async function processPlaces() {
-  const raw = fs.readFileSync('data/place_ids.json', 'utf-8');
+  const filePath = process.env.PLACE_IDS_FILE || 'data/place_ids.json';
+  const raw = fs.readFileSync(filePath, 'utf-8');
   const rawData = JSON.parse(raw);
 
   // Array von Objekten mit placeId und optional preferredName
