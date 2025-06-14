@@ -1,0 +1,30 @@
+name: Import Attribute Definitions
+
+on:
+  schedule:
+    - cron: '0 3 * * *'  # täglich um 03:00 UTC
+  workflow_dispatch:     # manuelles Auslösen möglich
+
+jobs:
+  import_attributes:
+    runs-on: ubuntu-latest
+
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm install node-fetch @supabase/supabase-js dotenv
+
+      - name: Run Import Attribute Definitions Script
+        run: node scripts/import_attribute_definitions.js
