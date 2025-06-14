@@ -105,7 +105,7 @@ async function scanAndInsertAttributes(placeId) {
 }
 
 // Beispiel-Aufruf
-const examplePlaceId = 'ChIJN1t_tDeuEmsRUsoyG83frY4'; // Ersetze durch deine Place ID
+const examplePlaceId = 'ChIJlczqgmOQdkcRisZiiWYhVSk'; // Ersetze durch deine Place ID
 
 scanAndInsertAttributes(examplePlaceId)
   .then(() => console.log('✅ Attribute Import fertig!'))
