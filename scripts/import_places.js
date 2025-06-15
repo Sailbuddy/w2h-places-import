@@ -7,7 +7,7 @@ dotenv.config();
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-// --- 1. Google Places Daten holen ---
+// 🔎 Abruf der Live-Daten von Google Places mit geändertem Feld formatted_phone_number
 async function fetchGooglePlaceData(placeId, language) {
   const apiKey = process.env.GOOGLE_API_KEY;
   const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_address,website,url,types,opening_hours,formatted_phone_number,rating,price_level&language=${language}&key=${apiKey}`;
@@ -29,87 +29,23 @@ async function fetchGooglePlaceData(placeId, language) {
   }
 }
 
-// --- Attribute Scan: Rekursive Key-Extraktion ---
-function extractKeys(obj, prefix = '') {
-  let keys = [];
-  for (const key in obj) {
-    if (!obj.hasOwnProperty(key)) continue;
-    const value = obj[key];
-    const fullKey = prefix ? `${prefix}.${key}` : key;
-
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
-      keys = keys.concat(extractKeys(value, fullKey));
-    } else {
-      keys.push(fullKey);
-    }
-  }
-  return keys;
-}
-
-// --- Datentyp bestimmen ---
-function determineType(obj, keyPath) {
-  const keys = keyPath.split('.');
-  let val = obj;
-  for (const k of keys) {
-    val = val ? val[k] : undefined;
-  }
-  if (val === null || val === undefined) return 'text';
-
-  if (typeof val === 'boolean') return 'boolean';
-  if (typeof val === 'number') return 'number';
-  if (typeof val === 'object') return 'json';
-
-  return 'text';
-}
-
-// --- Prüfen ob Attribut existiert ---
-async function attributeExists(key) {
+// 🔄 Attribute Mapping laden (key → attribute_id)
+async function loadAttributeMapping() {
   const { data, error } = await supabase
     .from('attribute_definitions')
-    .select('key')
-    .eq('key', key)
-    .single();
-
-  if (error && error.code !== 'PGRST116') { // 'No rows found' error
-    throw new Error(`DB Fehler beim Prüfen von Attribut ${key}: ${error.message}`);
-  }
-  return !!data;
-}
-
-// --- Neues Attribut anlegen ---
-async function insertAttributeDefinition(key, input_type) {
-  const { error } = await supabase.from('attribute_definitions').insert({
-    category_id: 1, // Beispiel-Kategorie anpassen falls nötig
-    key,
-    name_de: key,
-    description_de: '',
-    input_type,
-    is_active: false // Neu = inaktiv, manuell aktivieren
-  });
+    .select('id, key')
+    .eq('is_active', true);
 
   if (error) {
-    console.error(`Fehler beim Einfügen von Attribut ${key}: ${error.message}`);
-  } else {
-    console.log(`Neues Attribut eingefügt: ${key} (${input_type})`);
-  }
-}
-
-// --- Scan und Insert aller Attribute ---
-async function scanAndInsertAttributes(placeId) {
-  console.log(`Starte Attribut-Scan für Place ID: ${placeId}`);
-
-  const placeDetails = await fetchGooglePlaceData(placeId);
-  const keys = extractKeys(placeDetails);
-
-  for (const key of keys) {
-    const exists = await attributeExists(key);
-    if (!exists) {
-      const input_type = determineType(placeDetails, key);
-      await insertAttributeDefinition(key, input_type);
-    }
+    throw new Error(`Fehler beim Laden des Attribute-Mappings: ${error.message}`);
   }
 
-  console.log(`Scan und Eintrag abgeschlossen für Place ID: ${placeId}`);
+  const mapping = {};
+  data.forEach(attr => {
+    mapping[attr.key] = attr.id;
+  });
+
+  return mapping;
 }
 
 // 📥 Hauptfunktion zum Einfügen oder Updaten einer Location
@@ -137,9 +73,11 @@ async function insertOrUpdateLocation(placeEntry, placeDetails) {
   return data;
 }
 
-// 🌍 Sprachvarianten für Name und Beschreibung einfügen
-async function insertLocationValues(locationId, placeDetails) {
+// 🌍 Sprachvarianten für Name und Beschreibung einfügen (mit attribute_id Mapping)
+async function insertLocationValues(locationId, placeDetails, attributeMapping) {
+  // Sprachen, die wir unterstützen
   const languages = ['de', 'en', 'it', 'hr', 'fr'];
+
   const inserts = [];
 
   for (const lang of languages) {
@@ -147,23 +85,29 @@ async function insertLocationValues(locationId, placeDetails) {
     const descriptionKey = `description_${lang}`;
 
     if (placeDetails[nameKey]) {
-      inserts.push({
-        location_id: locationId,
-        key: 'name',
-        value_text: placeDetails[nameKey],
-        language_code: lang,
-        updated_at: new Date().toISOString(),
-      });
+      const attrId = attributeMapping['name'];
+      if (attrId) {
+        inserts.push({
+          location_id: locationId,
+          attribute_id: attrId,
+          value_text: placeDetails[nameKey],
+          language_code: lang,
+          updated_at: new Date().toISOString(),
+        });
+      }
     }
 
     if (placeDetails[descriptionKey]) {
-      inserts.push({
-        location_id: locationId,
-        key: 'description',
-        value_text: placeDetails[descriptionKey],
-        language_code: lang,
-        updated_at: new Date().toISOString(),
-      });
+      const attrId = attributeMapping['description'];
+      if (attrId) {
+        inserts.push({
+          location_id: locationId,
+          attribute_id: attrId,
+          value_text: placeDetails[descriptionKey],
+          language_code: lang,
+          updated_at: new Date().toISOString(),
+        });
+      }
     }
   }
 
@@ -190,6 +134,9 @@ async function processPlaces() {
 
   const rawData = JSON.parse(raw);
 
+  // Attribute Mapping laden (key → id)
+  const attributeMapping = await loadAttributeMapping();
+
   // Array von Objekten mit placeId und optional preferredName
   const placeEntries = rawData.map(entry => {
     if (typeof entry === 'string') {
@@ -200,20 +147,17 @@ async function processPlaces() {
 
   for (const placeEntry of placeEntries) {
     try {
-      // 1. Attribute scannen und eintragen
-      await scanAndInsertAttributes(placeEntry.placeId);
-
-      // 2. Für Sprachen alle Daten abfragen und später speichern
+      // Für Sprachen alle Daten abfragen und später speichern
       const placeDetailsDe = await fetchGooglePlaceData(placeEntry.placeId, 'de');
       const placeDetailsEn = await fetchGooglePlaceData(placeEntry.placeId, 'en');
       const placeDetailsIt = await fetchGooglePlaceData(placeEntry.placeId, 'it');
       const placeDetailsHr = await fetchGooglePlaceData(placeEntry.placeId, 'hr');
       const placeDetailsFr = await fetchGooglePlaceData(placeEntry.placeId, 'fr');
 
-      // 3. Location mit preferredName oder Name aus Google einfügen/updaten
+      // Location mit preferredName oder Name aus Google einfügen/updaten
       const location = await insertOrUpdateLocation(placeEntry, placeDetailsDe);
 
-      // 4. Sprachvarianten zusammenbauen und speichern
+      // Sprachvarianten zusammenbauen
       const placeDetailsAll = {
         name_de: placeDetailsDe.name || null,
         description_de: placeDetailsDe.formatted_address || null,
@@ -227,7 +171,7 @@ async function processPlaces() {
         description_fr: placeDetailsFr.formatted_address || null,
       };
 
-      await insertLocationValues(location.id, placeDetailsAll);
+      await insertLocationValues(location.id, placeDetailsAll, attributeMapping);
 
     } catch (error) {
       console.error(`❌ Fehler bei Place ID ${placeEntry.placeId}: ${error.message}`);
