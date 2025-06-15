@@ -6,15 +6,18 @@ dotenv.config();
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-// --- 1. Google Places Daten holen (alle Felder) ---
+// --- 1. Google Places Daten holen (alle Felder) mit Debug-Logging ---
 async function fetchGooglePlaceData(placeId, language = 'de') {
   const apiKey = process.env.GOOGLE_API_KEY;
-  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=*&language=${language}&key=${apiKey}`;
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=*&language=${language}&key=${apiKey}`;
+  
+  console.log("Request URL:", url);
 
   const response = await fetch(url);
   const data = await response.json();
 
   if (data.status !== 'OK') {
+    console.warn(`API Antwort bei Fehler: ${JSON.stringify(data, null, 2)}`);
     throw new Error(`Fehler beim Abruf der Place Details: ${data.status}`);
   }
 
@@ -86,26 +89,34 @@ async function insertAttributeDefinition(key, input_type) {
   }
 }
 
-// --- 6. Hauptfunktion ---
+// --- 6. Hauptfunktion mit erweitertem Logging ---
 async function scanAndInsertAttributes(placeId) {
   console.log(`Starte Scan für Place ID: ${placeId}`);
 
-  const placeDetails = await fetchGooglePlaceData(placeId);
-  const keys = extractKeys(placeDetails);
+  try {
+    const placeDetails = await fetchGooglePlaceData(placeId);
+    const keys = extractKeys(placeDetails);
 
-  for (const key of keys) {
-    const exists = await attributeExists(key);
-    if (!exists) {
-      const input_type = determineType(placeDetails, key);
-      await insertAttributeDefinition(key, input_type);
+    console.log(`Gefundene Keys: ${keys.length}`);
+
+    for (const key of keys) {
+      const exists = await attributeExists(key);
+      if (!exists) {
+        const input_type = determineType(placeDetails, key);
+        await insertAttributeDefinition(key, input_type);
+      } else {
+        console.log(`Attribut bereits vorhanden: ${key}`);
+      }
     }
-  }
 
-  console.log(`Scan und Eintrag abgeschlossen für Place ID: ${placeId}`);
+    console.log(`Scan und Eintrag abgeschlossen für Place ID: ${placeId}`);
+  } catch (err) {
+    console.error(`Fehler beim Scan für Place ID ${placeId}: ${err.message}`);
+  }
 }
 
-// Beispiel-Aufruf
-const examplePlaceId = 'ChIJlczqgmOQdkcRisZiiWYhVSk'; // Ersetze durch deine Place ID
+// Beispiel-Aufruf (hier kannst du die Place ID anpassen)
+const examplePlaceId = 'ChIJlczqgmOQdkcRisZiiWYhVSk';
 
 scanAndInsertAttributes(examplePlaceId)
   .then(() => console.log('✅ Attribute Import fertig!'))
