@@ -10,7 +10,7 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 // 🔎 Abruf der Live-Daten von Google Places mit geändertem Feld formatted_phone_number
 async function fetchGooglePlaceData(placeId, language) {
   const apiKey = process.env.GOOGLE_API_KEY;
-  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_address,website,url,types,opening_hours,formatted_phone_number,rating,price_level&language=${language}&key=${apiKey}`;
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=name,formatted_address,website,url,types,opening_hours,formatted_phone_number,rating,price_level&language=${language}&key=${apiKey}`;
 
   try {
     const response = await fetch(url);
@@ -40,9 +40,9 @@ async function loadAttributeMapping() {
     throw new Error(`Fehler beim Laden des Attribute-Mappings: ${error.message}`);
   }
 
-  const mapping = {};
+  const mapping = new Map();
   data.forEach(attr => {
-    mapping[attr.key] = attr.id;
+    mapping.set(attr.key, attr.id);
   });
 
   return mapping;
@@ -85,7 +85,7 @@ async function insertLocationValues(locationId, placeDetails, attributeMapping) 
     const descriptionKey = `description_${lang}`;
 
     if (placeDetails[nameKey]) {
-      const attrId = attributeMapping['name'];
+      const attrId = attributeMapping.get('name');
       if (attrId) {
         inserts.push({
           location_id: locationId,
@@ -94,11 +94,13 @@ async function insertLocationValues(locationId, placeDetails, attributeMapping) 
           language_code: lang,
           updated_at: new Date().toISOString(),
         });
+      } else {
+        console.warn(`Attribut 'name' nicht im Mapping gefunden!`);
       }
     }
 
     if (placeDetails[descriptionKey]) {
-      const attrId = attributeMapping['description'];
+      const attrId = attributeMapping.get('description');
       if (attrId) {
         inserts.push({
           location_id: locationId,
@@ -107,6 +109,8 @@ async function insertLocationValues(locationId, placeDetails, attributeMapping) 
           language_code: lang,
           updated_at: new Date().toISOString(),
         });
+      } else {
+        console.warn(`Attribut 'description' nicht im Mapping gefunden!`);
       }
     }
   }
