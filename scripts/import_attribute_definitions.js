@@ -85,6 +85,19 @@ function determineType(obj, keyPath) {
   return 'text';
 }
 
+// Hilfsfunktion, um options als JSON zu erzeugen, wenn Wert Objekt oder Array ist
+function getOptionsValue(obj, keyPath) {
+  const keys = keyPath.split('.');
+  let val = obj;
+  for (const k of keys) {
+    val = val ? val[k] : undefined;
+  }
+  if (val && typeof val === 'object') {
+    return JSON.stringify(val);
+  }
+  return null;
+}
+
 // --- 4. Prüfen ob Attribut existiert ---
 async function attributeExists(key) {
   const { data, error } = await supabase
@@ -100,13 +113,49 @@ async function attributeExists(key) {
 }
 
 // --- 5. Neues Attribut anlegen ---
-async function insertAttributeDefinition(key, input_type) {
+async function insertAttributeDefinition(key, input_type, placeDetails, keys) {
+  // Mehrsprachige Namen und Beschreibungen aus placeDetails holen (wenn vorhanden)
+  // Wir nehmen die erste vorhandene Sprache, die im keys Array für name/description vorkommt
+  function findLocalizedValue(baseKey) {
+    const languages = ['de', 'en', 'it', 'hr', 'fr'];
+    for (const lang of languages) {
+      const keyName = `${baseKey}_${lang}`;
+      if (keys.includes(keyName) && placeDetails[keyName]) {
+        return placeDetails[keyName];
+      }
+    }
+    return '';
+  }
+
+  const nameDe = findLocalizedValue('name');
+  const descriptionDe = findLocalizedValue('description');
+
+  const nameEn = placeDetails['name_en'] || '';
+  const descriptionEn = placeDetails['description_en'] || '';
+  const nameIt = placeDetails['name_it'] || '';
+  const descriptionIt = placeDetails['description_it'] || '';
+  const nameHr = placeDetails['name_hr'] || '';
+  const descriptionHr = placeDetails['description_hr'] || '';
+  const nameFr = placeDetails['name_fr'] || '';
+  const descriptionFr = placeDetails['description_fr'] || '';
+
+  const optionsValue = getOptionsValue(placeDetails, key);
+
   const { error } = await supabase.from('attribute_definitions').insert({
     category_id: 1, // Beispiel-Kategorie anpassen falls nötig
     key,
-    name_de: key,
-    description_de: '',
+    name_de: nameDe || key,
+    description_de: descriptionDe || '',
+    name_en: nameEn,
+    description_en: descriptionEn,
+    name_it: nameIt,
+    description_it: descriptionIt,
+    name_hr: nameHr,
+    description_hr: descriptionHr,
+    name_fr: nameFr,
+    description_fr: descriptionFr,
     input_type,
+    options: optionsValue,
     is_active: false // Neu = inaktiv, manuell aktivieren
   });
 
@@ -129,7 +178,7 @@ async function scanAndInsertAttributes(placeId) {
       const exists = await attributeExists(key);
       if (!exists) {
         const input_type = determineType(placeDetails, key);
-        await insertAttributeDefinition(key, input_type);
+        await insertAttributeDefinition(key, input_type, placeDetails, keys);
       }
     }
 
