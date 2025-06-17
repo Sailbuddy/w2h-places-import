@@ -1,6 +1,7 @@
 import fetch from 'node-fetch';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import fs from 'fs';
 
 dotenv.config();
 
@@ -34,7 +35,7 @@ const fieldsList = [
 
 const fieldsParam = fieldsList.join(',');
 
-// --- 1. Google Places Daten holen (mit expliziten Feldern) ---
+// --- Google Places Daten holen (mit expliziten Feldern) ---
 async function fetchGooglePlaceData(placeId, language = 'de') {
   const apiKey = process.env.GOOGLE_API_KEY;
   const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=${fieldsParam}&language=${language}&key=${apiKey}`;
@@ -52,7 +53,7 @@ async function fetchGooglePlaceData(placeId, language = 'de') {
   return data.result;
 }
 
-// --- 2. Rekursive Key-Extraktion aus Objekt ---
+// --- Rekursive Key-Extraktion aus Objekt ---
 function extractKeys(obj, prefix = '') {
   let keys = [];
   for (const key in obj) {
@@ -69,7 +70,7 @@ function extractKeys(obj, prefix = '') {
   return keys;
 }
 
-// --- 3. Datentyp bestimmen ---
+// --- Datentyp bestimmen ---
 function determineType(obj, keyPath) {
   const keys = keyPath.split('.');
   let val = obj;
@@ -85,20 +86,7 @@ function determineType(obj, keyPath) {
   return 'text';
 }
 
-// Hilfsfunktion, um options als JSON zu erzeugen, wenn Wert Objekt oder Array ist
-function getOptionsValue(obj, keyPath) {
-  const keys = keyPath.split('.');
-  let val = obj;
-  for (const k of keys) {
-    val = val ? val[k] : undefined;
-  }
-  if (val && typeof val === 'object') {
-    return JSON.stringify(val);
-  }
-  return null;
-}
-
-// --- 4. Prüfen ob Attribut existiert ---
+// --- Prüfen ob Attribut existiert ---
 async function attributeExists(key) {
   const { data, error } = await supabase
     .from('attribute_definitions')
@@ -112,51 +100,15 @@ async function attributeExists(key) {
   return !!data;
 }
 
-// --- 5. Neues Attribut anlegen ---
-async function insertAttributeDefinition(key, input_type, placeDetails, keys) {
-  // Mehrsprachige Namen und Beschreibungen aus placeDetails holen (wenn vorhanden)
-  // Wir nehmen die erste vorhandene Sprache, die im keys Array für name/description vorkommt
-  function findLocalizedValue(baseKey) {
-    const languages = ['de', 'en', 'it', 'hr', 'fr'];
-    for (const lang of languages) {
-      const keyName = `${baseKey}_${lang}`;
-      if (keys.includes(keyName) && placeDetails[keyName]) {
-        return placeDetails[keyName];
-      }
-    }
-    return '';
-  }
-
-  const nameDe = findLocalizedValue('name');
-  const descriptionDe = findLocalizedValue('description');
-
-  const nameEn = placeDetails['name_en'] || '';
-  const descriptionEn = placeDetails['description_en'] || '';
-  const nameIt = placeDetails['name_it'] || '';
-  const descriptionIt = placeDetails['description_it'] || '';
-  const nameHr = placeDetails['name_hr'] || '';
-  const descriptionHr = placeDetails['description_hr'] || '';
-  const nameFr = placeDetails['name_fr'] || '';
-  const descriptionFr = placeDetails['description_fr'] || '';
-
-  const optionsValue = getOptionsValue(placeDetails, key);
-
+// --- Neues Attribut anlegen ---
+async function insertAttributeDefinition(key, input_type) {
   const { error } = await supabase.from('attribute_definitions').insert({
-    category_id: 1, // Beispiel-Kategorie anpassen falls nötig
+    category_id: 1,
     key,
-    name_de: nameDe || key,
-    description_de: descriptionDe || '',
-    name_en: nameEn,
-    description_en: descriptionEn,
-    name_it: nameIt,
-    description_it: descriptionIt,
-    name_hr: nameHr,
-    description_hr: descriptionHr,
-    name_fr: nameFr,
-    description_fr: descriptionFr,
+    name_de: key,
+    description_de: '',
     input_type,
-    options: optionsValue,
-    is_active: false // Neu = inaktiv, manuell aktivieren
+    is_active: false
   });
 
   if (error) {
@@ -166,39 +118,43 @@ async function insertAttributeDefinition(key, input_type, placeDetails, keys) {
   }
 }
 
-// --- 6. Hauptfunktion ---
-async function scanAndInsertAttributes() {
-  // Lese Place ID aus Environment oder CLI Argument ein
-  const placeIdFromEnv = process.env.PLACE_ID;
-  const placeIdFromArg = process.argv[2]; // z.B. "node import_attribute_definitions.js PLACE_ID"
-
-  const placeId = placeIdFromArg || placeIdFromEnv;
-  if (!placeId) {
-    console.error('❌ Keine Place ID angegeben. Bitte als ENV PLACE_ID oder CLI Argument übergeben.');
-    process.exit(1);
-  }
-
-  console.log(`Starte Scan für Place ID: ${placeId}`);
-
+// --- Hauptfunktion für mehrere Place IDs ---
+async function scanAttributesFromJsonFile(jsonPath = 'data/place_ids_archive.json') {
+  let raw;
   try {
-    const placeDetails = await fetchGooglePlaceData(placeId);
-    const keys = extractKeys(placeDetails);
-
-    for (const key of keys) {
-      const exists = await attributeExists(key);
-      if (!exists) {
-        const input_type = determineType(placeDetails, key);
-        await insertAttributeDefinition(key, input_type, placeDetails, keys);
-      }
-    }
-
-    console.log(`Scan und Eintrag abgeschlossen für Place ID: ${placeId}`);
-  } catch (error) {
-    console.error(`Fehler beim Scan für Place ID ${placeId}: ${error.message}`);
+    raw = fs.readFileSync(jsonPath, 'utf-8');
+  } catch (err) {
+    console.error(`Datei ${jsonPath} nicht gefunden oder kann nicht gelesen werden: ${err.message}`);
+    return;
   }
+
+  const rawData = JSON.parse(raw);
+  // Erwarte Array von Place IDs (strings) oder Objekte mit placeId
+  const placeIds = rawData.map(entry => (typeof entry === 'string') ? entry : entry.placeId);
+
+  for (const placeId of placeIds) {
+    console.log(`\n=== Starte Scan für Place ID: ${placeId} ===`);
+    try {
+      const placeDetails = await fetchGooglePlaceData(placeId);
+      const keys = extractKeys(placeDetails);
+
+      for (const key of keys) {
+        const exists = await attributeExists(key);
+        if (!exists) {
+          const input_type = determineType(placeDetails, key);
+          await insertAttributeDefinition(key, input_type);
+        }
+      }
+      console.log(`Scan und Eintrag abgeschlossen für Place ID: ${placeId}`);
+    } catch (error) {
+      console.error(`Fehler beim Scan für Place ID ${placeId}: ${error.message}`);
+    }
+  }
+
+  console.log('\n✅ Attribut-Import für alle Place IDs abgeschlossen!');
 }
 
-// Starten
-scanAndInsertAttributes()
-  .then(() => console.log('✅ Attribute Import fertig!'))
+// ▶️ Start (kann direkt so ausgeführt werden)
+scanAttributesFromJsonFile()
+  .then(() => console.log('Fertig!'))
   .catch(console.error);
