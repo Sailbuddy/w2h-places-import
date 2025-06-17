@@ -28,7 +28,7 @@ jobs:
         run: npm install @supabase/supabase-js node-fetch dotenv
 
       - name: Scan Attributes
-        run: node scripts/attribute_scan.js
+        run: node scripts/import_attribute_definitions.js  # <-- geändertes Script
 
       - name: Import Locations
         run: node scripts/import_places.js
