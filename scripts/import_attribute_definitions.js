@@ -167,7 +167,17 @@ async function insertAttributeDefinition(key, input_type, placeDetails, keys) {
 }
 
 // --- 6. Hauptfunktion ---
-async function scanAndInsertAttributes(placeId) {
+async function scanAndInsertAttributes() {
+  // Lese Place ID aus Environment oder CLI Argument ein
+  const placeIdFromEnv = process.env.PLACE_ID;
+  const placeIdFromArg = process.argv[2]; // z.B. "node import_attribute_definitions.js PLACE_ID"
+
+  const placeId = placeIdFromArg || placeIdFromEnv;
+  if (!placeId) {
+    console.error('❌ Keine Place ID angegeben. Bitte als ENV PLACE_ID oder CLI Argument übergeben.');
+    process.exit(1);
+  }
+
   console.log(`Starte Scan für Place ID: ${placeId}`);
 
   try {
@@ -188,9 +198,7 @@ async function scanAndInsertAttributes(placeId) {
   }
 }
 
-// Beispiel-Aufruf (anpassen)
-const examplePlaceId = 'ChIJlczqgmOQdkcRisZiiWYhVSk';
-
-scanAndInsertAttributes(examplePlaceId)
+// Starten
+scanAndInsertAttributes()
   .then(() => console.log('✅ Attribute Import fertig!'))
   .catch(console.error);
