@@ -7,24 +7,14 @@ dotenv.config();
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-// Liste der erlaubten Felder laut Google Place Details API (für Importzwecke)
-const fieldsList = [
-  "name",
-  "formatted_address",
-  "website",
-  "url",
-  "types",
-  "opening_hours",
-  "formatted_phone_number",
-  "rating",
-  "price_level"
-];
-const fieldsParam = fieldsList.join(',');
+// 📌 Konfiguration: Pfad zur JSON mit Place IDs (für automatischen Lauf standardmäßig die Archivdatei)
+const PLACE_IDS_ARCHIVE_FILE = 'data/place_ids_archive.json';
+const PLACE_IDS_MANUAL_FILE = 'data/place_ids.json';
 
-// 🔎 Abruf der Live-Daten von Google Places mit geändertem Feld formatted_phone_number
+// 🔎 Google Place Details abrufen
 async function fetchGooglePlaceData(placeId, language) {
   const apiKey = process.env.GOOGLE_API_KEY;
-  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=${fieldsParam}&language=${language}&key=${apiKey}`;
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=name,formatted_address,website,url,types,opening_hours,formatted_phone_number,rating,price_level&language=${language}&key=${apiKey}`;
 
   try {
     const response = await fetch(url);
@@ -32,14 +22,13 @@ async function fetchGooglePlaceData(placeId, language) {
 
     if (data.status !== 'OK') {
       console.warn(`Warnung: Fehler beim Abruf der Place Details für Place ID ${placeId} in Sprache ${language}: ${data.status}`);
-      console.warn(`API Antwort: ${JSON.stringify(data)}`);
-      throw new Error(`Fehler bei Place Details API: ${data.status}`);
+      return null; // Nicht werfen, damit der Import weiterläuft
     }
 
     return data.result;
   } catch (err) {
     console.error(`Fehler beim Abruf der Place Details für Place ID ${placeId} in Sprache ${language}: ${err.message}`);
-    throw err;
+    return null;
   }
 }
 
@@ -62,27 +51,27 @@ async function loadAttributeMapping() {
   return mapping;
 }
 
-// 📥 Hauptfunktion zum Einfügen oder Updaten einer Location
+// 📥 Location einfügen oder aktualisieren
 async function insertOrUpdateLocation(placeEntry, placeDetails) {
-  const displayName = placeEntry.preferredName || placeDetails.name || '(ohne Namen)';
+  const displayName = placeEntry.preferredName || placeDetails?.name || '(ohne Namen)';
 
   const { data, error } = await supabase.from('locations').upsert([{
     google_place_id: placeEntry.placeId,
     display_name: displayName,
-    address: placeDetails.formatted_address || null,
-    website: placeDetails.website || null,
-    maps_url: placeDetails.url || null,
+    address: placeDetails?.formatted_address || null,
+    website: placeDetails?.website || null,
+    maps_url: placeDetails?.url || null,
     category_id: 9, // Dummy – später anpassen
-    phone: placeDetails.formatted_phone_number || null,
-    rating: placeDetails.rating || null,
-    price_level: placeDetails.price_level || null,
+    phone: placeDetails?.formatted_phone_number || null,
+    rating: placeDetails?.rating || null,
+    price_level: placeDetails?.price_level || null,
   }], { onConflict: 'google_place_id' }).select().single();
 
   if (error) {
     throw new Error(`❌ Fehler beim Upsert der Location: ${error.message}`);
   }
 
-  console.log(`✅ Import erfolgreich für Place ID: ${placeEntry.placeId} (${displayName})`);
+  console.log(`✅ Location importiert für Place ID: ${placeEntry.placeId} (${displayName})`);
 
   return data;
 }
@@ -134,53 +123,63 @@ async function insertLocationValues(locationId, placeDetails, attributeMapping) 
   console.log(`🌍 Sprachvarianten gespeichert für Location ID ${locationId}`);
 }
 
-// 🔁 Verarbeitet alle Place IDs aus JSON-Datei
-async function processPlaces() {
-  let raw;
+// 🧩 Hilfsfunktion: JSON-Datei lesen
+function loadPlaceIdsFromFile(filepath) {
   try {
-    raw = fs.readFileSync('data/place_ids.json', 'utf-8');
+    const raw = fs.readFileSync(filepath, 'utf-8');
+    const rawData = JSON.parse(raw);
+
+    return rawData.map(entry => {
+      if (typeof entry === 'string') {
+        return { placeId: entry, preferredName: null };
+      }
+      return { placeId: entry.placeId, preferredName: entry.preferredName || null };
+    });
   } catch (err) {
-    console.error(`Datei data/place_ids.json nicht gefunden oder kann nicht gelesen werden: ${err.message}`);
+    console.error(`Datei ${filepath} nicht gefunden oder ungültig: ${err.message}`);
+    return [];
+  }
+}
+
+// 🔁 Hauptfunktion
+async function processPlaces(isManual = false) {
+  const placeIdsFile = isManual ? PLACE_IDS_MANUAL_FILE : PLACE_IDS_ARCHIVE_FILE;
+
+  console.log(`Starte Import von Place IDs aus Datei: ${placeIdsFile}`);
+
+  const placeEntries = loadPlaceIdsFromFile(placeIdsFile);
+
+  if (placeEntries.length === 0) {
+    console.warn('Keine Place IDs gefunden. Abbruch.');
     return;
   }
 
-  const rawData = JSON.parse(raw);
-
-  // Attribute Mapping laden (key → id)
   const attributeMapping = await loadAttributeMapping();
-
-  // Array von Objekten mit placeId und optional preferredName
-  const placeEntries = rawData.map(entry => {
-    if (typeof entry === 'string') {
-      return { placeId: entry, preferredName: null };
-    }
-    return { placeId: entry.placeId, preferredName: entry.preferredName || null };
-  });
 
   for (const placeEntry of placeEntries) {
     try {
-      // Für Sprachen alle Daten abfragen und später speichern
+      // Mehrsprachige Daten abfragen
       const placeDetailsDe = await fetchGooglePlaceData(placeEntry.placeId, 'de');
       const placeDetailsEn = await fetchGooglePlaceData(placeEntry.placeId, 'en');
       const placeDetailsIt = await fetchGooglePlaceData(placeEntry.placeId, 'it');
       const placeDetailsHr = await fetchGooglePlaceData(placeEntry.placeId, 'hr');
       const placeDetailsFr = await fetchGooglePlaceData(placeEntry.placeId, 'fr');
 
-      // Location mit preferredName oder Name aus Google einfügen/updaten
+      // Location anlegen oder updaten (über 'de' Daten)
       const location = await insertOrUpdateLocation(placeEntry, placeDetailsDe);
 
-      // Sprachvarianten zusammenbauen
+      // Sprachvarianten sammeln
       const placeDetailsAll = {
-        name_de: placeDetailsDe.name || null,
-        description_de: placeDetailsDe.formatted_address || null,
-        name_en: placeDetailsEn.name || null,
-        description_en: placeDetailsEn.formatted_address || null,
-        name_it: placeDetailsIt.name || null,
-        description_it: placeDetailsIt.formatted_address || null,
-        name_hr: placeDetailsHr.name || null,
-        description_hr: placeDetailsHr.formatted_address || null,
-        name_fr: placeDetailsFr.name || null,
-        description_fr: placeDetailsFr.formatted_address || null,
+        name_de: placeDetailsDe?.name || null,
+        description_de: placeDetailsDe?.formatted_address || null,
+        name_en: placeDetailsEn?.name || null,
+        description_en: placeDetailsEn?.formatted_address || null,
+        name_it: placeDetailsIt?.name || null,
+        description_it: placeDetailsIt?.formatted_address || null,
+        name_hr: placeDetailsHr?.name || null,
+        description_hr: placeDetailsHr?.formatted_address || null,
+        name_fr: placeDetailsFr?.name || null,
+        description_fr: placeDetailsFr?.formatted_address || null,
       };
 
       await insertLocationValues(location.id, placeDetailsAll, attributeMapping);
@@ -193,5 +192,8 @@ async function processPlaces() {
   console.log('✅ Importlauf abgeschlossen');
 }
 
-// ▶️ Start
-processPlaces();
+// ▶️ Start automatisch (für den regulären nächtlichen Import)
+processPlaces(false);
+
+// ▶️ Export für manuellen Import (z.B. bei Bedarf aus anderem Skript)
+// export { processPlaces };
