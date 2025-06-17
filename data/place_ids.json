@@ -29,7 +29,7 @@
   },
   {
     "placeId": "ChIJdYDQ2DLYdkcRhYxc6IAtsBw",
-    "preferredName": "Würth Hochenburger St. Johann im Pongau"
+    "preferredName": "WÃ¼rth Hochenburger St. Johann im Pongau"
   },
   {
     "placeId": "ChIJ59VFffmUdkcRHxNnAfL6XVM",
@@ -41,6 +41,10 @@
   },
   {
     "placeId": "ChIJc70IrzrYdkcRUgat43Qca_Q",
-    "preferredName": "Br�ckenwirt St. Johann im Pongau"
+    "preferredName": "Brückenwirt St. Johann im Pongau"
+  },
+  {
+    "placeId": "ChIJY243ritOdkcRr_EQl_SD2Wo",
+    "preferredName": "Aufschnaiter St. Johann in Tirol"
   }
 ]
