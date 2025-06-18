@@ -1,29 +1,29 @@
 name: Manueller Import Google Places
 
 on:
-  workflow_dispatch:     # Nur manuell ausführbar
+  workflow_dispatch:     # nur manuell ausführbar
 
 jobs:
   import:
     runs-on: ubuntu-latest
+
     env:
-      ACTIONS_STEP_DEBUG: true
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-      PLACE_IDS_FILE: data/manual_place_ids.json    # Hier die manuelle JSON
+      PLACE_IDS_FILE: data/place_ids.json   # Manuelle, aktuelle IDs
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Repo
         uses: actions/checkout@v3
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      - name: Install dependencies
-        run: npm install axios dotenv @supabase/supabase-js
+      - name: Install Dependencies
+        run: npm install @supabase/supabase-js node-fetch dotenv
 
-      - name: Run import script
-        run: node scripts/import_places.js
+      - name: Import Locations (Manuell)
+        run: node scripts/import_places_manual.js
