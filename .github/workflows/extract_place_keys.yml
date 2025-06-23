@@ -1,7 +1,7 @@
 name: Extract Attribute Keys from Place Details
 
 on:
-  workflow_dispatch:  # manuell auslösbar im GitHub UI
+  workflow_dispatch:  # Manuell auslösbar im GitHub UI
 
 jobs:
   extract-keys:
@@ -9,6 +9,7 @@ jobs:
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
 
     steps:
       - name: Checkout repository
@@ -19,8 +20,8 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install dependencies
-        run: npm install dotenv @supabase/supabase-js
+      - name: Install all dependencies
+        run: npm install axios dotenv @supabase/supabase-js
 
       - name: Run extract_place_keys.js
         run: node scripts/extract_place_keys.js
