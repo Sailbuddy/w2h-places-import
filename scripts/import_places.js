@@ -142,6 +142,38 @@ function loadPlaceIdsFromFile(filepath) {
   }
 }
 
+// 🔄 Datei leeren mit erweiterten Logs
+function clearManualPlaceIdsFile() {
+  try {
+    const filePath = path.resolve(process.cwd(), PLACE_IDS_MANUAL_FILE);
+    const dirPath = path.dirname(filePath);
+
+    console.log(`Arbeitsverzeichnis: ${process.cwd()}`);
+    console.log(`Versuche, Datei zu löschen: ${filePath}`);
+
+    if (!fs.existsSync(dirPath)) {
+      console.error(`Verzeichnis existiert nicht: ${dirPath}`);
+    } else {
+      console.log(`Verzeichnis existiert: ${dirPath}`);
+      try {
+        fs.accessSync(dirPath, fs.constants.W_OK);
+        console.log(`Schreibrechte auf Verzeichnis vorhanden: ${dirPath}`);
+      } catch {
+        console.error(`Keine Schreibrechte für Verzeichnis: ${dirPath}`);
+      }
+    }
+
+    if (fs.existsSync(filePath)) {
+      fs.writeFileSync(filePath, '[]', 'utf-8');
+      console.log(`Die Datei ${PLACE_IDS_MANUAL_FILE} wurde erfolgreich geleert.`);
+    } else {
+      console.warn(`Die Datei ${PLACE_IDS_MANUAL_FILE} existiert nicht.`);
+    }
+  } catch (err) {
+    console.error(`Fehler beim Leeren der Datei ${PLACE_IDS_MANUAL_FILE}: ${err.message}`);
+  }
+}
+
 // 🔁 Hauptfunktion
 async function processPlaces(isManual = false) {
   const placeIdsFile = isManual ? PLACE_IDS_MANUAL_FILE : PLACE_IDS_ARCHIVE_FILE;
@@ -190,24 +222,11 @@ async function processPlaces(isManual = false) {
     }
   }
 
-  // Nur bei manuellem Import wird die Datei import_places.json geleert
-  if (isManual) {
-    try {
-      const filePath = path.resolve(process.cwd(), PLACE_IDS_MANUAL_FILE);
-      console.log(`Arbeitsverzeichnis: ${process.cwd()}`);
-      console.log(`Versuche, Datei zu löschen: ${filePath}`);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-        console.log(`Die Datei ${PLACE_IDS_MANUAL_FILE} wurde nach dem Import gelöscht.`);
-      } else {
-        console.warn(`Die Datei ${PLACE_IDS_MANUAL_FILE} existiert nicht.`);
-      }
-    } catch (err) {
-      console.error(`Fehler beim Löschen der Datei ${PLACE_IDS_MANUAL_FILE}: ${err.message}`);
-    }
-  }
-
   console.log('✅ Importlauf abgeschlossen');
+
+  if (isManual) {
+    clearManualPlaceIdsFile();
+  }
 }
 
 // ▶️ Start automatisch (für den regulären nächtlichen Import)
