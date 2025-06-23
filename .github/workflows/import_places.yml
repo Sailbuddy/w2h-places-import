@@ -15,19 +15,19 @@ jobs:
       GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
 
     steps:
-      - name: Checkout Repo
+      - name: 📦 Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
+      - name: 🧰 Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      - name: Install Dependencies
-        run: npm install @supabase/supabase-js node-fetch dotenv
+      - name: 📦 Install Dependencies
+        run: npm install axios dotenv @supabase/supabase-js node-fetch
 
-      - name: Scan Attribute Definitions
-        run: node scripts/import_attribute_definitions.js
+      - name: ✳️ Auto-Erweiterung Attributliste (aus Google API)
+        run: node scripts/extract_place_keys.js
 
-      - name: Import Locations
+      - name: 📍 Import Locations & Attributwerte
         run: node scripts/import_places.js
