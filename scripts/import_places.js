@@ -2,6 +2,7 @@ import fetch from 'node-fetch';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import fs from 'fs';
+import path from 'path';
 
 dotenv.config();
 
@@ -186,21 +187,27 @@ async function processPlaces(isManual = false) {
 
     } catch (error) {
       console.error(`❌ Fehler bei Place ID ${placeEntry.placeId}: ${error.message}`);
-      // Bei Fehler brechen wir hier nicht ab, sondern fahren mit den nächsten fort
     }
   }
 
-  console.log('✅ Importlauf abgeschlossen');
-
-  // Nur bei manuellem Import die import_places.json Datei löschen
+  // Nur bei manuellem Import wird die Datei import_places.json geleert
   if (isManual) {
     try {
-      fs.unlinkSync(PLACE_IDS_MANUAL_FILE);
-      console.log(`Die Datei ${PLACE_IDS_MANUAL_FILE} wurde nach dem Import gelöscht.`);
+      const filePath = path.resolve(process.cwd(), PLACE_IDS_MANUAL_FILE);
+      console.log(`Arbeitsverzeichnis: ${process.cwd()}`);
+      console.log(`Versuche, Datei zu löschen: ${filePath}`);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log(`Die Datei ${PLACE_IDS_MANUAL_FILE} wurde nach dem Import gelöscht.`);
+      } else {
+        console.warn(`Die Datei ${PLACE_IDS_MANUAL_FILE} existiert nicht.`);
+      }
     } catch (err) {
       console.error(`Fehler beim Löschen der Datei ${PLACE_IDS_MANUAL_FILE}: ${err.message}`);
     }
   }
+
+  console.log('✅ Importlauf abgeschlossen');
 }
 
 // ▶️ Start automatisch (für den regulären nächtlichen Import)
