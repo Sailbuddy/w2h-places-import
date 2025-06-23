@@ -11,7 +11,6 @@ jobs:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-      PLACE_IDS_FILE: data/place_ids.json
 
     steps:
       - name: Checkout Repo
@@ -25,8 +24,11 @@ jobs:
       - name: Install Dependencies
         run: npm install @supabase/supabase-js node-fetch dotenv
 
-      - name: Scan Attribute Definitions (manuell)
+      - name: Scan Attribute Definitions
         run: node scripts/import_attribute_definitions.js
 
-      - name: Import Locations (manuell)
+      - name: Import Locations (Manuell)
         run: node scripts/import_places.js
+
+      - name: Place IDs Datei leeren
+        run: node scripts/place_ids_leeren.js
