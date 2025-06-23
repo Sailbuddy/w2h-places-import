@@ -1,13 +1,13 @@
 import fetch from 'node-fetch';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
-import fs from 'fs/promises';
+import fs from 'fs';
 
 dotenv.config();
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-// 📌 Konfiguration: Pfade zu JSON-Dateien
+// 📌 Konfiguration: Pfad zur JSON mit Place IDs (für automatischen Lauf standardmäßig die Archivdatei)
 const PLACE_IDS_ARCHIVE_FILE = 'data/place_ids_archive.json';
 const PLACE_IDS_MANUAL_FILE = 'data/place_ids.json';
 
@@ -22,7 +22,7 @@ async function fetchGooglePlaceData(placeId, language) {
 
     if (data.status !== 'OK') {
       console.warn(`Warnung: Fehler beim Abruf der Place Details für Place ID ${placeId} in Sprache ${language}: ${data.status}`);
-      return null; // Fehler nicht werfen, Import soll weiterlaufen
+      return null; // Nicht werfen, damit der Import weiterläuft
     }
 
     return data.result;
@@ -123,10 +123,10 @@ async function insertLocationValues(locationId, placeDetails, attributeMapping) 
   console.log(`🌍 Sprachvarianten gespeichert für Location ID ${locationId}`);
 }
 
-// 🧩 JSON-Datei lesen und Place IDs laden
-async function loadPlaceIdsFromFile(filepath) {
+// 🧩 Hilfsfunktion: JSON-Datei lesen
+function loadPlaceIdsFromFile(filepath) {
   try {
-    const raw = await fs.readFile(filepath, 'utf-8');
+    const raw = fs.readFileSync(filepath, 'utf-8');
     const rawData = JSON.parse(raw);
 
     return rawData.map(entry => {
@@ -141,23 +141,13 @@ async function loadPlaceIdsFromFile(filepath) {
   }
 }
 
-// 🗑 Datei leeren (nur bei manueller Importdatei)
-async function clearManualPlaceIdsFile() {
-  try {
-    await fs.writeFile(PLACE_IDS_MANUAL_FILE, JSON.stringify([], null, 2), 'utf-8');
-    console.log(`🗑 Datei ${PLACE_IDS_MANUAL_FILE} wurde geleert.`);
-  } catch (err) {
-    console.error(`Fehler beim Leeren der Datei ${PLACE_IDS_MANUAL_FILE}: ${err.message}`);
-  }
-}
-
 // 🔁 Hauptfunktion
 async function processPlaces(isManual = false) {
   const placeIdsFile = isManual ? PLACE_IDS_MANUAL_FILE : PLACE_IDS_ARCHIVE_FILE;
 
   console.log(`Starte Import von Place IDs aus Datei: ${placeIdsFile}`);
 
-  const placeEntries = await loadPlaceIdsFromFile(placeIdsFile);
+  const placeEntries = loadPlaceIdsFromFile(placeIdsFile);
 
   if (placeEntries.length === 0) {
     console.warn('Keine Place IDs gefunden. Abbruch.');
@@ -196,23 +186,25 @@ async function processPlaces(isManual = false) {
 
     } catch (error) {
       console.error(`❌ Fehler bei Place ID ${placeEntry.placeId}: ${error.message}`);
+      // Bei Fehler brechen wir hier nicht ab, sondern fahren mit den nächsten fort
     }
   }
 
-  // Wenn manueller Import, dann JSON mit neuen Place IDs leeren
-  if (isManual) {
-    await clearManualPlaceIdsFile();
-  }
-
   console.log('✅ Importlauf abgeschlossen');
+
+  // Nur bei manuellem Import die import_places.json Datei löschen
+  if (isManual) {
+    try {
+      fs.unlinkSync(PLACE_IDS_MANUAL_FILE);
+      console.log(`Die Datei ${PLACE_IDS_MANUAL_FILE} wurde nach dem Import gelöscht.`);
+    } catch (err) {
+      console.error(`Fehler beim Löschen der Datei ${PLACE_IDS_MANUAL_FILE}: ${err.message}`);
+    }
+  }
 }
 
 // ▶️ Start automatisch (für den regulären nächtlichen Import)
-if (process.argv.includes('--manual')) {
-  processPlaces(true);
-} else {
-  processPlaces(false);
-}
+processPlaces(false);
 
-// ▶️ Export für manuellen Import bei Bedarf
-export { processPlaces };
+// ▶️ Export für manuellen Import (z.B. bei Bedarf aus anderem Skript)
+// export { processPlaces };
