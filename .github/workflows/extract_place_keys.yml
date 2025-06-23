@@ -1,0 +1,26 @@
+name: Extract Attribute Keys from Place Details
+
+on:
+  workflow_dispatch:  # manuell auslösbar im GitHub UI
+
+jobs:
+  extract-keys:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install dotenv @supabase/supabase-js
+
+      - name: Run extract_place_keys.js
+        run: node scripts/extract_place_keys.js
