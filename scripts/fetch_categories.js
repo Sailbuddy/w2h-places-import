@@ -7,7 +7,7 @@ dotenv.config();
 
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_KEY; // ✔ wie in .yml definiert
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -29,7 +29,7 @@ async function ensureCategory(type) {
     .maybeSingle();
 
   if (existing) {
-    console.log(`✅ Already exists: ${type}`);
+    console.log(`✅ Bereits vorhanden: ${type}`);
     return;
   }
 
@@ -48,9 +48,9 @@ async function ensureCategory(type) {
     .single();
 
   if (error) {
-    console.error(`❌ Failed to insert ${type}:`, error.message);
+    console.error(`❌ Fehler beim Einfügen ${type}:`, error.message);
   } else {
-    console.log(`➕ Inserted category: ${type}`);
+    console.log(`➕ Neue Kategorie eingefügt: ${type}`);
   }
 }
 
