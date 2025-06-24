@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 dotenv.config();
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY; // Vereinheitlicht
+const supabaseKey = process.env.SUPABASE_KEY; // ⚠️ exakt wie in import_places.yml
 const googleApiKey = process.env.GOOGLE_API_KEY;
 
 if (!supabaseKey) throw new Error('SUPABASE_KEY is required.');
