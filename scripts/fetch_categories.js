@@ -7,7 +7,7 @@ dotenv.config();
 
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_KEY; // ✔ wie in .yml definiert
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_KEY;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -57,11 +57,13 @@ async function ensureCategory(type) {
 async function run() {
   console.log(`📂 Kategorienprüfung für Datei: ${inputFile}`);
 
-  for (const placeId of placeIds) {
+  for (const entry of placeIds) {
+    const placeId = typeof entry === 'string' ? entry : entry.place_id;
+
     try {
       const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${GOOGLE_API_KEY}`;
       const res = await axios.get(url);
-      const types = res.data.result.types || [];
+      const types = res.data.result?.types || [];
 
       for (const type of types) {
         await ensureCategory(type);
@@ -70,6 +72,8 @@ async function run() {
       console.error(`❌ Fehler bei Place ${placeId}:`, err.message);
     }
   }
+
+  console.log(`✅ Kategorie-Sync abgeschlossen für ${placeIds.length} Einträge.`);
 }
 
 run();
