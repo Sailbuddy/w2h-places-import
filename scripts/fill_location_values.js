@@ -20,9 +20,10 @@ const fetchPlaceDetails = async (placeId) => {
 };
 
 const main = async () => {
+  // Lade alle Attributdefinitionen inkl. Schlüssel und Typ
   const { data: attributes, error: attrErr } = await supabase
     .from('attribute_definitions')
-    .select('id, key, type');
+    .select('id, key, input_type');
 
   if (attrErr) {
     console.error('Fehler beim Laden der attribute_definitions:', attrErr.message);
@@ -31,14 +32,13 @@ const main = async () => {
 
   for (const entry of placeEntries) {
     const placeId = entry.placeId;
-    if (!placeId) continue;
-
     const details = await fetchPlaceDetails(placeId);
     if (!details) {
-      console.warn(`⚠️ Keine Details gefunden für Place ID: ${placeId}`);
+      console.warn(`⚠️ Keine Details gefunden für Place ID: ${JSON.stringify(entry)}`);
       continue;
     }
 
+    // Hole passende location_id aus Supabase
     const { data: loc, error: locErr } = await supabase
       .from('locations')
       .select('id')
@@ -63,7 +63,7 @@ const main = async () => {
         updated_at: now,
       };
 
-      switch (attr.type) {
+      switch (attr.input_type) {
         case 'text':
           entryData.value_text = String(rawValue);
           break;
@@ -85,7 +85,7 @@ const main = async () => {
         .upsert(entryData, { ignoreDuplicates: false });
 
       if (insertErr) {
-        console.error(`Fehler beim Einfügen von Attribut ${attr.key}:`, insertErr.message);
+        console.error(`❌ Fehler beim Einfügen von Attribut ${attr.key}:`, insertErr.message);
       }
     }
 
