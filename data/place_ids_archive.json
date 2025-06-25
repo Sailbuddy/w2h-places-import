@@ -29,7 +29,7 @@
   },
   {
     "placeId": "ChIJdYDQ2DLYdkcRhYxc6IAtsBw",
-    "preferredName": "WÃ¼rth Hochenburger St. Johann im Pongau"
+    "preferredName": "WÃƒÂ¼rth Hochenburger St. Johann im Pongau"
   },
   {
     "placeId": "ChIJ59VFffmUdkcRHxNnAfL6XVM",
@@ -41,7 +41,7 @@
   },
   {
     "placeId": "ChIJc70IrzrYdkcRUgat43Qca_Q",
-    "preferredName": "Brückenwirt St. Johann im Pongau"
+    "preferredName": "BrÃ¼ckenwirt St. Johann im Pongau"
   },
   {
     "placeId": "ChIJY243ritOdkcRr_EQl_SD2Wo",
@@ -69,6 +69,10 @@
   },
   {
     "placeId": "ChIJL7F85FEnd0cR9T0kTw8MaoY",
-    "preferredName": "bierf�hrer Goldegg"
+    "preferredName": "bierführer Goldegg"
+  },
+  {
+    "placeId": "ChIJfeDvheKod0cR-kYOxfypeWU",
+    "preferredName": "Nationalpark Hohe Tauern Mittersill"
   }
 ]
