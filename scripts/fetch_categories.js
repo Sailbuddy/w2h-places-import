@@ -12,6 +12,7 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+// ▶️ Argument: JSON-Dateiname
 const inputFile = process.argv[2] || 'data/place_ids.json';
 
 if (!fs.existsSync(inputFile)) {
@@ -21,36 +22,42 @@ if (!fs.existsSync(inputFile)) {
 
 const placeIds = JSON.parse(fs.readFileSync(inputFile, 'utf8'));
 
-async function translateCategoryName(name_en) {
-  const prompt = `Übersetze den Begriff "${name_en}" als Kategoriebeschreibung für eine Google Maps Karte jeweils mit einem einzelnen Wort in die folgenden Sprachen: Deutsch (de), Italienisch (it), Französisch (fr), Kroatisch (hr). Gib das Ergebnis als JSON-Objekt zurück mit den Schlüsseln name_de, name_it, name_fr, name_hr.`;
+async function translateWithOpenAI(term) {
+  const prompt = `Übersetze das Wort "${term}" (z. B. eine Kategorie wie "restaurant", "park" etc.) in folgende Sprachen:\n- Deutsch\n- Italienisch\n- Französisch\n- Kroatisch\n\nFormat:\n{\n  "de": "…",\n  "it": "…",\n  "fr": "…",\n  "hr": "…"\n}`;
 
   try {
-    const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: 'gpt-4',
-      messages: [
-        { role: 'system', content: 'Du bist ein hilfreicher Übersetzer für Begriffe aus der Kartenkategorisierung.' },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.3
-    }, {
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json'
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: 'Du bist ein hilfreicher Übersetzer.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.3
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${OPENAI_API_KEY}`
+        }
       }
-    });
+    );
 
-    const message = response.data.choices[0].message.content;
-    const translations = JSON.parse(message);
-    return translations;
+    const raw = response.data.choices[0].message.content;
 
+    // JSON aus Text extrahieren und parsen
+    const match = raw.match(/\{[\s\S]*?\}/);
+    if (!match) {
+      console.warn(`⚠️ Kein JSON gefunden in der KI-Antwort:\n${raw}`);
+      return {};
+    }
+
+    const parsed = JSON.parse(match[0]);
+    return parsed;
   } catch (err) {
-    console.error(`❌ Fehler bei der Übersetzung von "${name_en}":`, err.message);
-    return {
-      name_de: null,
-      name_it: null,
-      name_fr: null,
-      name_hr: null
-    };
+    console.error(`❌ Fehler bei OpenAI-Übersetzung: ${err.response?.status || ''} ${err.message}`);
+    return {};
   }
 }
 
@@ -66,24 +73,25 @@ async function ensureCategory(type) {
     return false;
   }
 
-  console.log(`🌍 Übersetze Kategorie "${type}" ...`);
-  const translations = await translateCategoryName(type);
-
-  const newCat = {
+  const base = {
     name_en: type,
-    name_de: translations.name_de,
-    name_it: translations.name_it,
-    name_fr: translations.name_fr,
-    name_hr: translations.name_hr,
     icon: type,
     active: true,
     sort_order: 9999,
     google_cat_id: type
   };
 
+  // 🔁 OpenAI-Übersetzung holen
+  const translations = await translateWithOpenAI(type);
+
+  if (translations.de) base.name_de = translations.de;
+  if (translations.it) base.name_it = translations.it;
+  if (translations.fr) base.name_fr = translations.fr;
+  if (translations.hr) base.name_hr = translations.hr;
+
   const { data, error } = await supabase
     .from('categories')
-    .insert(newCat)
+    .insert(base)
     .select()
     .single();
 
@@ -122,17 +130,14 @@ async function run() {
         continue;
       }
 
-      if ('types' in result && Array.isArray(result.types)) {
-        if (result.types.length === 0) {
-          console.log(`🔍 types ist leer ([])`);
-        } else {
-          console.log(`🔍 types: ${result.types.join(', ')}`);
-        }
+      const types = result.types || [];
+
+      if (types.length === 0) {
+        console.log(`🔍 types ist leer ([])`);
       } else {
-        console.warn(`⚠️ types-Feld fehlt oder ist kein Array!`);
+        console.log(`🔍 types: ${types.join(', ')}`);
       }
 
-      const types = result.types || [];
       for (const type of types) {
         const added = await ensureCategory(type);
         if (!added) {
