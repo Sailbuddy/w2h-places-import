@@ -2,14 +2,12 @@ import fetch from 'node-fetch';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import fs from 'fs';
-
 dotenv.config();
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-// 📌 Konfiguration: Pfad zur JSON mit Place IDs (für automatischen Lauf standardmäßig die Archivdatei)
-const PLACE_IDS_ARCHIVE_FILE = 'data/place_ids_archive.json';
-const PLACE_IDS_MANUAL_FILE = 'data/place_ids.json';
+// 🔁 Eingabedatei aus Argument oder Standardwert
+const filepath = process.argv[2] || 'data/place_ids_archive.json';
 
 // 🔎 Google Place Details abrufen
 async function fetchGooglePlaceData(placeId, language) {
@@ -21,39 +19,40 @@ async function fetchGooglePlaceData(placeId, language) {
     const data = await response.json();
 
     if (data.status !== 'OK') {
-      console.warn(`Warnung: Fehler beim Abruf der Place Details für Place ID ${placeId} in Sprache ${language}: ${data.status}`);
-      return null; // Nicht werfen, damit der Import weiterläuft
+      console.warn(`⚠️ Fehler beim Abruf für ${placeId} (${language}): ${data.status}`);
+      return null;
     }
 
     return data.result;
   } catch (err) {
-    console.error(`Fehler beim Abruf der Place Details für Place ID ${placeId} in Sprache ${language}: ${err.message}`);
+    console.error(`❌ Netzwerkfehler bei ${placeId} (${language}): ${err.message}`);
     return null;
   }
 }
 
-// 🔄 Attribute Mapping laden (key → attribute_id)
-async function loadAttributeMapping() {
-  const { data, error } = await supabase
-    .from('attribute_definitions')
-    .select('id, key')
-    .eq('is_active', true);
+// 📥 Kategorie-ID aus erster Google-Type ermitteln
+async function resolveCategoryId(googleTypes) {
+  if (!googleTypes || googleTypes.length === 0) return 1;
+  const firstType = googleTypes[0];
 
-  if (error) {
-    throw new Error(`Fehler beim Laden des Attribute-Mappings: ${error.message}`);
+  const { data, error } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('google_cat_id', firstType)
+    .maybeSingle();
+
+  if (error || !data) {
+    console.warn(`⚠️ Keine Kategorie-ID gefunden für Typ: ${firstType}, fallback zu ID 1`);
+    return 1;
   }
 
-  const mapping = {};
-  data.forEach(attr => {
-    mapping[attr.key] = attr.id;
-  });
-
-  return mapping;
+  return data.id;
 }
 
 // 📥 Location einfügen oder aktualisieren
 async function insertOrUpdateLocation(placeEntry, placeDetails) {
   const displayName = placeEntry.preferredName || placeDetails?.name || '(ohne Namen)';
+  const categoryId = await resolveCategoryId(placeDetails?.types);
 
   const { data, error } = await supabase.from('locations').upsert([{
     google_place_id: placeEntry.placeId,
@@ -61,7 +60,7 @@ async function insertOrUpdateLocation(placeEntry, placeDetails) {
     address: placeDetails?.formatted_address || null,
     website: placeDetails?.website || null,
     maps_url: placeDetails?.url || null,
-    category_id: 9, // Dummy – später anpassen
+    category_id: categoryId,
     phone: placeDetails?.formatted_phone_number || null,
     rating: placeDetails?.rating || null,
     price_level: placeDetails?.price_level || null,
@@ -71,86 +70,86 @@ async function insertOrUpdateLocation(placeEntry, placeDetails) {
     throw new Error(`❌ Fehler beim Upsert der Location: ${error.message}`);
   }
 
-  console.log(`✅ Location importiert für Place ID: ${placeEntry.placeId} (${displayName})`);
-
+  console.log(`✅ Location gespeichert: ${displayName} (${placeEntry.placeId})`);
   return data;
 }
 
-// 🌍 Sprachvarianten für Name und Beschreibung einfügen (mit attribute_id Mapping)
+// 🧩 Attribut-Mapping laden
+async function loadAttributeMapping() {
+  const { data, error } = await supabase
+    .from('attribute_definitions')
+    .select('id, key')
+    .eq('is_active', true);
+
+  if (error) throw new Error(`Fehler beim Laden des Attribut-Mappings: ${error.message}`);
+
+  const mapping = {};
+  data.forEach(attr => {
+    mapping[attr.key] = attr.id;
+  });
+  return mapping;
+}
+
+// 🌍 Location-Werte in mehreren Sprachen einfügen
 async function insertLocationValues(locationId, placeDetails, attributeMapping) {
   const languages = ['de', 'en', 'it', 'hr', 'fr'];
   const inserts = [];
 
   for (const lang of languages) {
     const nameKey = `name_${lang}`;
-    const descriptionKey = `description_${lang}`;
+    const descKey = `description_${lang}`;
 
-    if (placeDetails[nameKey]) {
-      const attrId = attributeMapping['name'];
-      if (attrId) {
-        inserts.push({
-          location_id: locationId,
-          attribute_id: attrId,
-          value_text: placeDetails[nameKey],
-          language_code: lang,
-          updated_at: new Date().toISOString(),
-        });
-      }
+    if (placeDetails[nameKey] && attributeMapping.name) {
+      inserts.push({
+        location_id: locationId,
+        attribute_id: attributeMapping.name,
+        value_text: placeDetails[nameKey],
+        language_code: lang,
+        updated_at: new Date().toISOString(),
+      });
     }
 
-    if (placeDetails[descriptionKey]) {
-      const attrId = attributeMapping['description'];
-      if (attrId) {
-        inserts.push({
-          location_id: locationId,
-          attribute_id: attrId,
-          value_text: placeDetails[descriptionKey],
-          language_code: lang,
-          updated_at: new Date().toISOString(),
-        });
-      }
+    if (placeDetails[descKey] && attributeMapping.description) {
+      inserts.push({
+        location_id: locationId,
+        attribute_id: attributeMapping.description,
+        value_text: placeDetails[descKey],
+        language_code: lang,
+        updated_at: new Date().toISOString(),
+      });
     }
   }
 
-  if (inserts.length === 0) return;
-
-  const { error } = await supabase.from('location_values').upsert(inserts);
-
-  if (error) {
-    throw new Error(`❌ Fehler beim Einfügen in 'location_values': ${error.message}`);
+  if (inserts.length > 0) {
+    const { error } = await supabase.from('location_values').upsert(inserts);
+    if (error) throw new Error(`Fehler beim Speichern der Sprachwerte: ${error.message}`);
+    console.log(`🌍 Sprachvarianten gespeichert für Location ID ${locationId}`);
   }
-
-  console.log(`🌍 Sprachvarianten gespeichert für Location ID ${locationId}`);
 }
 
-// 🧩 Hilfsfunktion: JSON-Datei lesen
+// 📂 Datei mit Place IDs laden
 function loadPlaceIdsFromFile(filepath) {
   try {
     const raw = fs.readFileSync(filepath, 'utf-8');
     const rawData = JSON.parse(raw);
 
     return rawData.map(entry => {
-      if (typeof entry === 'string') {
-        return { placeId: entry, preferredName: null };
-      }
+      if (typeof entry === 'string') return { placeId: entry, preferredName: null };
       return { placeId: entry.placeId, preferredName: entry.preferredName || null };
     });
   } catch (err) {
-    console.error(`Datei ${filepath} nicht gefunden oder ungültig: ${err.message}`);
+    console.error(`❌ Fehler beim Lesen von ${filepath}: ${err.message}`);
     return [];
   }
 }
 
-// 🔁 Hauptfunktion
-async function processPlaces(isManual = false) {
-  const placeIdsFile = isManual ? PLACE_IDS_MANUAL_FILE : PLACE_IDS_ARCHIVE_FILE;
-
-  console.log(`Starte Import von Place IDs aus Datei: ${placeIdsFile}`);
-
-  const placeEntries = loadPlaceIdsFromFile(placeIdsFile);
+// ▶️ Hauptlauf
+async function processPlaces() {
+  console.log(`📦 Starte Import von Datei: ${filepath}`);
+  const placeEntries = loadPlaceIdsFromFile(filepath);
 
   if (placeEntries.length === 0) {
-    console.warn('Keine Place IDs gefunden. Abbruch.');
+    console.warn('⚠️ Keine gültigen Einträge gefunden – Abbruch');
     return;
   }
 
@@ -158,42 +157,34 @@ async function processPlaces(isManual = false) {
 
   for (const placeEntry of placeEntries) {
     try {
-      // Mehrsprachige Daten abfragen
-      const placeDetailsDe = await fetchGooglePlaceData(placeEntry.placeId, 'de');
-      const placeDetailsEn = await fetchGooglePlaceData(placeEntry.placeId, 'en');
-      const placeDetailsIt = await fetchGooglePlaceData(placeEntry.placeId, 'it');
-      const placeDetailsHr = await fetchGooglePlaceData(placeEntry.placeId, 'hr');
-      const placeDetailsFr = await fetchGooglePlaceData(placeEntry.placeId, 'fr');
+      const detailsDe = await fetchGooglePlaceData(placeEntry.placeId, 'de');
+      const detailsEn = await fetchGooglePlaceData(placeEntry.placeId, 'en');
+      const detailsIt = await fetchGooglePlaceData(placeEntry.placeId, 'it');
+      const detailsHr = await fetchGooglePlaceData(placeEntry.placeId, 'hr');
+      const detailsFr = await fetchGooglePlaceData(placeEntry.placeId, 'fr');
 
-      // Location anlegen oder updaten (über 'de' Daten)
-      const location = await insertOrUpdateLocation(placeEntry, placeDetailsDe);
+      const location = await insertOrUpdateLocation(placeEntry, detailsDe);
 
-      // Sprachvarianten sammeln
-      const placeDetailsAll = {
-        name_de: placeDetailsDe?.name || null,
-        description_de: placeDetailsDe?.formatted_address || null,
-        name_en: placeDetailsEn?.name || null,
-        description_en: placeDetailsEn?.formatted_address || null,
-        name_it: placeDetailsIt?.name || null,
-        description_it: placeDetailsIt?.formatted_address || null,
-        name_hr: placeDetailsHr?.name || null,
-        description_hr: placeDetailsHr?.formatted_address || null,
-        name_fr: placeDetailsFr?.name || null,
-        description_fr: placeDetailsFr?.formatted_address || null,
+      const all = {
+        name_de: detailsDe?.name,
+        description_de: detailsDe?.formatted_address,
+        name_en: detailsEn?.name,
+        description_en: detailsEn?.formatted_address,
+        name_it: detailsIt?.name,
+        description_it: detailsIt?.formatted_address,
+        name_hr: detailsHr?.name,
+        description_hr: detailsHr?.formatted_address,
+        name_fr: detailsFr?.name,
+        description_fr: detailsFr?.formatted_address,
       };
 
-      await insertLocationValues(location.id, placeDetailsAll, attributeMapping);
-
-    } catch (error) {
-      console.error(`❌ Fehler bei Place ID ${placeEntry.placeId}: ${error.message}`);
+      await insertLocationValues(location.id, all, attributeMapping);
+    } catch (err) {
+      console.error(`❌ Fehler bei Place ID ${placeEntry.placeId}: ${err.message}`);
     }
   }
 
   console.log('✅ Importlauf abgeschlossen');
 }
 
-// ▶️ Start automatisch (für den regulären nächtlichen Import)
-processPlaces(false);
-
-// ▶️ Export für manuellen Import (z.B. bei Bedarf aus anderem Skript)
-// export { processPlaces };
+processPlaces();
