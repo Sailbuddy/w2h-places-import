@@ -1,0 +1,29 @@
+name: 🧩 Fülle Location Values (Attribute-Werte)
+
+on:
+  workflow_dispatch:  # Manuelles Auslösen jederzeit möglich
+
+jobs:
+  fill-values:
+    runs-on: ubuntu-latest
+
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    steps:
+      - name: 📦 Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: 🧰 Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: 📦 Install Dependencies
+        run: npm install axios dotenv @supabase/supabase-js node-fetch
+
+      - name: 🧪 Fülle Attributwerte in location_values
+        run: node scripts/fill_location_values.js data/place_ids.json
