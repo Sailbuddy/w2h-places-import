@@ -1,21 +1,29 @@
-import dotenv from 'dotenv';
-dotenv.config();
-import { createClient } from '@supabase/supabase-js';
-import axios from 'axios';
 import fs from 'fs';
+import axios from 'axios';
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
 
+dotenv.config();
+
+// 🔑 API Keys
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_KEY;  // 👈 angepasst
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; // WICHTIG: konsistent mit yml
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-// 🧠 Konfiguration
-const filePath = 'data/place_ids.json';
-const openaiEndpoint = 'https://api.openai.com/v1/chat/completions';
-const openaiModel = 'gpt-3.5-turbo'; // Optional: 'gpt-4'
+// 📁 Dateiname über Argument oder Default
+const inputFile = process.argv[2] || 'data/place_ids.json';
 
-// 🧠 Hilfsfunktion zur KI-Übersetzung
+if (!fs.existsSync(inputFile)) {
+  console.error(`❌ Datei nicht gefunden: ${inputFile}`);
+  process.exit(1);
+}
+
+const placeIds = JSON.parse(fs.readFileSync(inputFile, 'utf8'));
+
+// 🧠 KI-Übersetzer
 async function translateWithOpenAI(termEn) {
   const prompt = `
 Gib mir den Begriff "${termEn}" auf folgenden Sprachen als einfache Wörter oder Kategorienbezeichnungen zurück:
@@ -34,9 +42,9 @@ hr: ...
 
   try {
     const response = await axios.post(
-      openaiEndpoint,
+      'https://api.openai.com/v1/chat/completions',
       {
-        model: openaiModel,
+        model: 'gpt-3.5-turbo',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0,
       },
@@ -49,13 +57,10 @@ hr: ...
     );
 
     const content = response.data.choices[0].message.content;
-
     const translations = {};
     for (const line of content.split('\n')) {
       const [lang, value] = line.split(':').map(s => s.trim());
-      if (lang && value) {
-        translations[lang] = value;
-      }
+      if (lang && value) translations[lang] = value;
     }
 
     return {
@@ -65,63 +70,86 @@ hr: ...
       name_hr: translations.hr || null,
     };
   } catch (error) {
-    console.error(`❌ Fehler bei der Übersetzung von "${termEn}":`, error.response?.status, error.response?.data);
-    return {
-      name_de: null,
-      name_it: null,
-      name_fr: null,
-      name_hr: null,
-    };
+    console.error(`❌ OpenAI-Fehler bei "${termEn}":`, error.response?.data || error.message);
+    return { name_de: null, name_it: null, name_fr: null, name_hr: null };
   }
 }
 
-// 🧠 Hauptfunktion
-async function syncCategories() {
-  const rawData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-  const allTypes = new Set();
+// 🧩 Kategorie eintragen
+async function ensureCategory(type) {
+  const { data: existing } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('google_cat_id', type)
+    .maybeSingle();
 
-  for (const entry of rawData) {
-    if (entry.types && Array.isArray(entry.types)) {
-      entry.types.forEach(type => allTypes.add(type));
-    }
+  if (existing) {
+    console.log(`✅ Bereits vorhanden: ${type}`);
+    return false;
   }
 
-  console.log(`📦 ${allTypes.size} unterschiedliche Kategorien-Typen gefunden.`);
+  const translations = await translateWithOpenAI(type);
 
-  for (const type of allTypes) {
-    const { data: existing, error: readError } = await supabase
-      .from('categories')
-      .select('id')
-      .eq('google_cat_id', type)
-      .maybeSingle();
+  const newCat = {
+    google_cat_id: type,
+    name_en: type,
+    name_de: translations.name_de,
+    name_it: translations.name_it,
+    name_fr: translations.name_fr,
+    name_hr: translations.name_hr,
+    icon: type,
+    active: true,
+    sort_order: 9999,
+  };
 
-    if (existing) {
-      console.log(`✅ Ignoriert: ${type} (bereits vorhanden)`);
+  const { error } = await supabase.from('categories').insert(newCat);
+  if (error) {
+    console.error(`❌ Fehler beim Einfügen von ${type}:`, error.message);
+    return false;
+  }
+
+  console.log(`➕ Neue Kategorie eingefügt: ${type}`);
+  return true;
+}
+
+// ▶️ Hauptfunktion
+async function run() {
+  console.log(`📂 Kategorienprüfung für Datei: ${inputFile}`);
+
+  for (const entry of placeIds) {
+    const placeId = typeof entry === 'string'
+      ? entry
+      : entry.place_id || entry.placeId || entry.id || entry.place || undefined;
+
+    if (!placeId) {
+      console.warn(`⚠️ Ungültiger Eintrag: ${JSON.stringify(entry)}`);
       continue;
     }
 
-    console.log(`➕ Neue Kategorie eingetragen: ${type}`);
+    console.log(`📌 Prüfe Place ID: ${placeId}`);
 
-    const translations = await translateWithOpenAI(type);
+    try {
+      const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${GOOGLE_API_KEY}`;
+      const res = await axios.get(url);
+      const result = res.data.result;
 
-    const { error: insertError } = await supabase.from('categories').insert({
-      google_cat_id: type,
-      name_en: type,
-      name_de: translations.name_de,
-      name_it: translations.name_it,
-      name_fr: translations.name_fr,
-      name_hr: translations.name_hr,
-      icon: type,
-      active: true,
-      sort_order: 9999,
-    });
+      if (!result || !result.types || !Array.isArray(result.types)) {
+        console.warn(`⚠️ Keine gültigen types bei Place ID ${placeId}`);
+        continue;
+      }
 
-    if (insertError) {
-      console.error(`❌ Fehler beim Einfügen von ${type}:`, insertError.message);
+      for (const type of result.types) {
+        const added = await ensureCategory(type);
+        if (!added) {
+          console.log(`⚠️ Ignoriert: ${type}`);
+        }
+      }
+    } catch (err) {
+      console.error(`❌ Fehler bei Place ${placeId}:`, err.message);
     }
   }
 
-  console.log('✅ Kategorie-Sync abgeschlossen.');
+  console.log(`✅ Kategorie-Sync abgeschlossen für ${placeIds.length} Einträge.`);
 }
 
-syncCategories();
+run();
