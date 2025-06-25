@@ -1,90 +1,74 @@
-// scripts/fill_location_values.js
-
-import fs from 'fs';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
+import fs from 'fs';
+import path from 'path';
 
 dotenv.config();
 
-// ⚠️ ACHTUNG: Wir verwenden die gleichen Variablennamen wie in import_places.js
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
-
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error('SUPABASE_URL und SUPABASE_KEY sind erforderlich.');
-}
-
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Funktion zum Laden der Attribute-Definitionen aus Supabase
-async function getAttributeDefinitions() {
-  const { data, error } = await supabase
-    .from('attribute_definitions')
-    .select('*')
-    .eq('is_active', true);
+if (!supabaseKey) throw new Error('supabaseKey is required.');
 
-  if (error) throw new Error('Fehler beim Abrufen der Attributdefinitionen: ' + error.message);
-  return data;
-}
-
-// Funktion zum Laden der Location-Einträge aus der JSON-Datei
-function readPlaceIds(filePath) {
-  const raw = fs.readFileSync(filePath, 'utf-8');
+const readPlaceIds = (filePath) => {
+  const fullPath = path.resolve(filePath);
+  const raw = fs.readFileSync(fullPath);
   return JSON.parse(raw);
-}
+};
 
-// Funktion zur Verarbeitung und Eintragung
-async function fillAttributesForPlaces(places, attributeDefs) {
+const fillAttributesForPlaces = async (places, attributes) => {
   for (const place of places) {
-    const placeId = place.google_place_id;
-    const { data: location, error: locError } = await supabase
-      .from('locations')
-      .select('id, google_place_id')
-      .eq('google_place_id', placeId)
-      .maybeSingle();
+    const placeId = place.placeId; // <-- hier angepasst
+    if (!placeId) {
+      console.warn('⚠️ Keine gültige placeId im Datensatz:', place);
+      continue;
+    }
 
-    if (!location) {
+    const { data: location, error } = await supabase
+      .from('locations')
+      .select('id')
+      .eq('google_place_id', placeId)
+      .single();
+
+    if (error || !location) {
       console.warn(`⚠️ Keine Location gefunden für Place ID: ${placeId}`);
       continue;
     }
 
-    for (const def of attributeDefs) {
-      const value = place[def.key];
-      if (value === undefined || value === null) continue;
+    const insertValues = attributes.map((attr) => ({
+      location_id: location.id,
+      attribute_key: attr.key,
+      value: attr.default_value || '',
+      language_code: 'de', // optional erweiterbar
+    }));
 
-      const insert = {
-        location_id: location.id,
-        attribute_definition_id: def.id,
-        value_text: String(value),
-      };
+    const { error: insertError } = await supabase
+      .from('location_values')
+      .insert(insertValues);
 
-      const { error: insertError } = await supabase
-        .from('location_values')
-        .upsert(insert, { onConflict: ['location_id', 'attribute_definition_id'] });
-
-      if (insertError) {
-        console.error(`❌ Fehler beim Schreiben von ${def.key} für ${placeId}: ${insertError.message}`);
-      } else {
-        console.log(`✅ Eingetragen: ${def.key} = ${value} für ${placeId}`);
-      }
+    if (insertError) {
+      console.error(`❌ Fehler beim Einfügen der Attribute für ${placeId}:`, insertError);
+    } else {
+      console.log(`✅ Attributwerte erfolgreich eingetragen für ${placeId}`);
     }
   }
-}
+};
 
-// 🏁 Hauptlauf
 const main = async () => {
-  try {
-    const inputFile = process.argv[2];
-    if (!inputFile) throw new Error('Bitte Pfad zur JSON-Datei angeben.');
+  const placeData = readPlaceIds(process.argv[2]);
 
-    const placeData = readPlaceIds(inputFile);
-    const attributes = await getAttributeDefinitions();
-    await fillAttributesForPlaces(placeData, attributes);
-    console.log('✅ Attributwerte erfolgreich eingetragen.');
-  } catch (err) {
-    console.error('❌ Fehler im Ablauf:', err.message);
-    process.exit(1);
+  const { data: attributes, error: attrError } = await supabase
+    .from('attribute_definitions')
+    .select('*')
+    .eq('is_active', true);
+
+  if (attrError || !attributes) {
+    console.error('❌ Fehler beim Abrufen der Attribute:', attrError);
+    return;
   }
+
+  await fillAttributesForPlaces(placeData, attributes);
 };
 
 main();
