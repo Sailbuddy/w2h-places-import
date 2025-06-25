@@ -7,7 +7,7 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 
 const filePath = process.argv[2] || 'data/place_ids.json';
-const placeIds = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+const placeEntries = JSON.parse(fs.readFileSync(filePath, 'utf8'));
 
 const language = 'de';
 const now = new Date().toISOString();
@@ -22,14 +22,17 @@ const fetchPlaceDetails = async (placeId) => {
 const main = async () => {
   const { data: attributes, error: attrErr } = await supabase
     .from('attribute_definitions')
-    .select('id, key, input_type');
+    .select('id, key, type');
 
   if (attrErr) {
-    console.error('❌ Fehler beim Laden der attribute_definitions:', attrErr.message);
+    console.error('Fehler beim Laden der attribute_definitions:', attrErr.message);
     return;
   }
 
-  for (const placeId of placeIds) {
+  for (const entry of placeEntries) {
+    const placeId = entry.placeId;
+    if (!placeId) continue;
+
     const details = await fetchPlaceDetails(placeId);
     if (!details) {
       console.warn(`⚠️ Keine Details gefunden für Place ID: ${placeId}`);
@@ -50,40 +53,39 @@ const main = async () => {
     const location_id = loc.id;
 
     for (const attr of attributes) {
-      const value = details[attr.key];
-      if (value === undefined || value === null) continue;
+      const rawValue = details[attr.key];
+      if (rawValue === undefined || rawValue === null) continue;
 
-      const entry = {
+      const entryData = {
         location_id,
         attribute_id: attr.id,
         language_code: language,
         updated_at: now,
       };
 
-      switch (attr.input_type) {
+      switch (attr.type) {
         case 'text':
-          entry.value_text = String(value);
+          entryData.value_text = String(rawValue);
           break;
         case 'bool':
-          entry.value_bool = Boolean(value);
+          entryData.value_bool = Boolean(rawValue);
           break;
         case 'number':
-          entry.value_number = Number(value);
+          entryData.value_number = Number(rawValue);
           break;
         case 'option':
-          entry.value_option = String(value);
+          entryData.value_option = String(rawValue);
           break;
         default:
-          console.warn(`⚠️ Unbekannter input_type "${attr.input_type}" für Attribut ${attr.key}`);
           continue;
       }
 
       const { error: insertErr } = await supabase
         .from('location_values')
-        .upsert(entry, { ignoreDuplicates: false });
+        .upsert(entryData, { ignoreDuplicates: false });
 
       if (insertErr) {
-        console.error(`❌ Fehler beim Einfügen von Attribut ${attr.key}:`, insertErr.message);
+        console.error(`Fehler beim Einfügen von Attribut ${attr.key}:`, insertErr.message);
       }
     }
 
