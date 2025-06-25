@@ -63,12 +63,14 @@ async function run() {
     const placeId =
       typeof entry === 'string'
         ? entry
-        : entry.place_id || entry.id || entry.place || undefined;
+        : entry.place_id || entry.placeId || entry.id || entry.place || undefined;
 
     if (!placeId) {
-      console.warn(`⚠️ Ungültiger Eintrag in place_ids.json:`, JSON.stringify(entry));
+      console.warn(`⚠️ Ungültiger Eintrag in place_ids.json: ${JSON.stringify(entry)}`);
       continue;
     }
+
+    console.log(`📌 Verarbeite Place ID: ${placeId}`);
 
     try {
       const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${GOOGLE_API_KEY}`;
@@ -79,8 +81,6 @@ async function run() {
         console.warn(`⚠️ Kein result für Place ID: ${placeId}`);
         continue;
       }
-
-      console.log(`📌 Verarbeite Place ID: ${placeId}`);
 
       // 🧪 Logging für types[]
       if ('types' in result && Array.isArray(result.types)) {
