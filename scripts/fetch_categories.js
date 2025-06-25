@@ -1,36 +1,45 @@
+// scripts/fetch_categories.js
+
 import dotenv from 'dotenv';
 dotenv.config();
+
 import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
 import fs from 'fs';
 
+// 🔐 Secrets laden
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
+// 🔐 Sicherheitsprüfung
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('❌ Supabase-Konfiguration fehlt. Bitte prüfe SUPABASE_URL und SUPABASE_SERVICE_ROLE_KEY in den GitHub Secrets.');
+  process.exit(1);
+}
+
+if (!OPENAI_API_KEY) {
+  console.error('❌ OpenAI API Key fehlt. Bitte prüfe OPENAI_API_KEY in den GitHub Secrets.');
+  process.exit(1);
+}
+
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-// 🧠 Konfiguration
+// 📂 Konfiguration
 const filePath = 'data/place_ids.json';
 const openaiEndpoint = 'https://api.openai.com/v1/chat/completions';
-const openaiModel = 'gpt-3.5-turbo'; // Optional: 'gpt-4'
+const openaiModel = 'gpt-3.5-turbo';
 
-// 🧠 Hilfsfunktion zur KI-Übersetzung
+// 🔤 KI-gestützte Übersetzung
 async function translateWithOpenAI(termEn) {
-  const prompt = `
-Gib mir den Begriff "${termEn}" auf folgenden Sprachen als einfache Wörter oder Kategorienbezeichnungen zurück:
+  const prompt = `Gib mir den Begriff "${termEn}" als einfache Kategoriebezeichnung in vier Sprachen zurück:
 
-Deutsch (de):
-Italienisch (it):
-Französisch (fr):
-Kroatisch (hr):
+de:
+it:
+fr:
+hr:
 
-Nur die Begriffe, keine Erklärung, keine Einleitung. Format:
-de: ...
-it: ...
-fr: ...
-hr: ...
-`;
+Nur die Wörter, keine Einleitung, keine Sätze.`;
 
   try {
     const response = await axios.post(
@@ -65,7 +74,7 @@ hr: ...
       name_hr: translations.hr || null,
     };
   } catch (error) {
-    console.error(`❌ Fehler bei der Übersetzung von "${termEn}":`, error.response?.status, error.response?.data);
+    console.error(`❌ Fehler bei der Übersetzung von "${termEn}":`, error.response?.status || '', error.response?.data || error.message);
     return {
       name_de: null,
       name_it: null,
@@ -75,7 +84,7 @@ hr: ...
   }
 }
 
-// 🧠 Hauptfunktion
+// 🚀 Hauptfunktion: Kategorien prüfen & ergänzen
 async function syncCategories() {
   const rawData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
   const allTypes = new Set();
@@ -100,7 +109,7 @@ async function syncCategories() {
       continue;
     }
 
-    console.log(`➕ Neue Kategorie eingetragen: ${type}`);
+    console.log(`➕ Neue Kategorie erkannt: ${type}`);
 
     const translations = await translateWithOpenAI(type);
 
@@ -118,10 +127,13 @@ async function syncCategories() {
 
     if (insertError) {
       console.error(`❌ Fehler beim Einfügen von ${type}:`, insertError.message);
+    } else {
+      console.log(`✅ Eingefügt: ${type} mit Übersetzungen.`);
     }
   }
 
-  console.log('✅ Kategorie-Sync abgeschlossen.');
+  console.log('🎉 Kategorie-Sync abgeschlossen.');
 }
 
+// ▶️ Ausführen
 syncCategories();
