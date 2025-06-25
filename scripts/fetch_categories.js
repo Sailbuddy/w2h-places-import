@@ -30,7 +30,7 @@ async function ensureCategory(type) {
 
   if (existing) {
     console.log(`✅ Bereits vorhanden: ${type}`);
-    return;
+    return false; // nichts neu angelegt
   }
 
   const newCat = {
@@ -49,8 +49,10 @@ async function ensureCategory(type) {
 
   if (error) {
     console.error(`❌ Fehler beim Einfügen ${type}:`, error.message);
+    return false;
   } else {
     console.log(`➕ Neue Kategorie eingefügt: ${type}`);
+    return true;
   }
 }
 
@@ -63,10 +65,26 @@ async function run() {
     try {
       const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${GOOGLE_API_KEY}`;
       const res = await axios.get(url);
-      const types = res.data.result?.types || [];
+      const result = res.data.result;
+
+      if (!result) {
+        console.warn(`⚠️ Kein result für Place ID: ${placeId}`);
+        continue;
+      }
+
+      const types = result.types || [];
+      console.log(`📌 Verarbeite Place ID: ${placeId}`);
+      console.log(`🔍 types: ${types.join(', ')}`);
+
+      if (types.length === 0) {
+        console.log(`⚠️ Keine types vorhanden für ${placeId}`);
+      }
 
       for (const type of types) {
-        await ensureCategory(type);
+        const added = await ensureCategory(type);
+        if (!added) {
+          console.log(`⚠️ Ignoriert: ${type} (bereits vorhanden oder Fehler)`);
+        }
       }
     } catch (err) {
       console.error(`❌ Fehler bei Place ${placeId}:`, err.message);
