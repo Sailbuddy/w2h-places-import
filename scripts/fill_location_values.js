@@ -20,21 +20,22 @@ const fetchPlaceDetails = async (placeId) => {
 };
 
 const main = async () => {
-  // Hole Attribute-Definitionen
   const { data: attributes, error: attrErr } = await supabase
     .from('attribute_definitions')
-    .select('id, google_key, type');
+    .select('id, key, input_type');
 
   if (attrErr) {
-    console.error('Fehler beim Laden der attribute_definitions:', attrErr.message);
+    console.error('❌ Fehler beim Laden der attribute_definitions:', attrErr.message);
     return;
   }
 
   for (const placeId of placeIds) {
     const details = await fetchPlaceDetails(placeId);
-    if (!details) continue;
+    if (!details) {
+      console.warn(`⚠️ Keine Details gefunden für Place ID: ${placeId}`);
+      continue;
+    }
 
-    // Hole passende location_id
     const { data: loc, error: locErr } = await supabase
       .from('locations')
       .select('id')
@@ -42,15 +43,15 @@ const main = async () => {
       .maybeSingle();
 
     if (locErr || !loc) {
-      console.warn(`Keine Location gefunden für Place ID: ${placeId}`);
+      console.warn(`⚠️ Keine Location gefunden für Place ID: ${placeId}`);
       continue;
     }
 
     const location_id = loc.id;
 
     for (const attr of attributes) {
-      const rawValue = details[attr.google_key];
-      if (rawValue === undefined || rawValue === null) continue;
+      const value = details[attr.key];
+      if (value === undefined || value === null) continue;
 
       const entry = {
         location_id,
@@ -59,20 +60,21 @@ const main = async () => {
         updated_at: now,
       };
 
-      switch (attr.type) {
+      switch (attr.input_type) {
         case 'text':
-          entry.value_text = String(rawValue);
+          entry.value_text = String(value);
           break;
         case 'bool':
-          entry.value_bool = Boolean(rawValue);
+          entry.value_bool = Boolean(value);
           break;
         case 'number':
-          entry.value_number = Number(rawValue);
+          entry.value_number = Number(value);
           break;
         case 'option':
-          entry.value_option = String(rawValue);
+          entry.value_option = String(value);
           break;
         default:
+          console.warn(`⚠️ Unbekannter input_type "${attr.input_type}" für Attribut ${attr.key}`);
           continue;
       }
 
@@ -81,7 +83,7 @@ const main = async () => {
         .upsert(entry, { ignoreDuplicates: false });
 
       if (insertErr) {
-        console.error(`Fehler beim Einfügen von Attribut ${attr.google_key}:`, insertErr.message);
+        console.error(`❌ Fehler beim Einfügen von Attribut ${attr.key}:`, insertErr.message);
       }
     }
 
