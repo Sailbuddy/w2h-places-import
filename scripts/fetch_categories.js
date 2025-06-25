@@ -11,8 +11,9 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_KEY;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-// ▶️ Eingabedatei (default: place_ids.json)
+// ▶️ Argument: JSON-Dateiname
 const inputFile = process.argv[2] || 'data/place_ids.json';
+
 if (!fs.existsSync(inputFile)) {
   console.error(`❌ Datei nicht gefunden: ${inputFile}`);
   process.exit(1);
@@ -20,25 +21,7 @@ if (!fs.existsSync(inputFile)) {
 
 const placeIds = JSON.parse(fs.readFileSync(inputFile, 'utf8'));
 
-// 🔤 Zielsprachen
-const languages = ['en', 'de', 'it', 'fr', 'hr'];
-
-async function fetchTranslatedNames(placeId) {
-  const names = {};
-  for (const lang of languages) {
-    const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&language=${lang}&key=${GOOGLE_API_KEY}`;
-    try {
-      const res = await axios.get(url);
-      names[`name_${lang}`] = res.data.result?.name || null;
-    } catch (err) {
-      console.warn(`⚠️ Fehler bei Sprachabruf (${lang}) für ${placeId}: ${err.message}`);
-      names[`name_${lang}`] = null;
-    }
-  }
-  return names;
-}
-
-async function ensureCategory(type, originPlaceId) {
+async function ensureCategory(type) {
   const { data: existing } = await supabase
     .from('categories')
     .select('id')
@@ -46,19 +29,16 @@ async function ensureCategory(type, originPlaceId) {
     .maybeSingle();
 
   if (existing) {
-    console.log(`✅ Kategorie bereits vorhanden: ${type}`);
+    console.log(`✅ Bereits vorhanden: ${type}`);
     return false;
   }
 
-  console.log(`🌐 Neuer Typ entdeckt: ${type} – Sprachdaten werden geladen ...`);
-  const translations = await fetchTranslatedNames(originPlaceId);
-
   const newCat = {
-    google_cat_id: type,
+    name_en: type,
     icon: type,
     active: true,
     sort_order: 9999,
-    ...translations
+    google_cat_id: type
   };
 
   const { data, error } = await supabase
@@ -68,10 +48,10 @@ async function ensureCategory(type, originPlaceId) {
     .single();
 
   if (error) {
-    console.error(`❌ Fehler beim Einfügen der Kategorie ${type}: ${error.message}`);
+    console.error(`❌ Fehler beim Einfügen ${type}:`, error.message);
     return false;
   } else {
-    console.log(`➕ Neue Kategorie angelegt: ${type} (${translations.name_en || 'keine Übersetzung'})`);
+    console.log(`➕ Neue Kategorie eingefügt: ${type}`);
     return true;
   }
 }
@@ -93,7 +73,7 @@ async function run() {
     console.log(`📌 Verarbeite Place ID: ${placeId}`);
 
     try {
-      const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&language=en&key=${GOOGLE_API_KEY}`;
+      const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${GOOGLE_API_KEY}`;
       const res = await axios.get(url);
       const result = res.data.result;
 
@@ -102,16 +82,23 @@ async function run() {
         continue;
       }
 
-      const types = result.types || [];
-      if (types.length === 0) {
-        console.log(`🔍 types ist leer ([])`);
-        continue;
+      // 🧪 Logging für types[]
+      if ('types' in result && Array.isArray(result.types)) {
+        if (result.types.length === 0) {
+          console.log(`🔍 types ist leer ([])`);
+        } else {
+          console.log(`🔍 types: ${result.types.join(', ')}`);
+        }
       } else {
-        console.log(`🔍 types: ${types.join(', ')}`);
+        console.warn(`⚠️ types-Feld fehlt oder ist kein Array!`);
       }
 
+      const types = result.types || [];
       for (const type of types) {
-        await ensureCategory(type, placeId);
+        const added = await ensureCategory(type);
+        if (!added) {
+          console.log(`⚠️ Ignoriert: ${type} (bereits vorhanden oder Fehler)`);
+        }
       }
     } catch (err) {
       console.error(`❌ Fehler bei Place ${placeId}:`, err.message);
