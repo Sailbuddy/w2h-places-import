@@ -12,7 +12,6 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-// ▶️ Argument: JSON-Dateiname
 const inputFile = process.argv[2] || 'data/place_ids.json';
 
 if (!fs.existsSync(inputFile)) {
@@ -22,41 +21,42 @@ if (!fs.existsSync(inputFile)) {
 
 const placeIds = JSON.parse(fs.readFileSync(inputFile, 'utf8'));
 
+// 🔁 KI-gestützte Übersetzungsfunktion
 async function translateWithOpenAI(term) {
-  const prompt = `Übersetze das Wort "${term}" (z. B. eine Kategorie wie "restaurant", "park" etc.) in folgende Sprachen:\n- Deutsch\n- Italienisch\n- Französisch\n- Kroatisch\n\nFormat:\n{\n  "de": "…",\n  "it": "…",\n  "fr": "…",\n  "hr": "…"\n}`;
+  const prompt = `Übersetze den englischen Begriff "${term}" für eine Kartendarstellung in die Sprachen Deutsch (de), Italienisch (it), Französisch (fr) und Kroatisch (hr). Gib nur ein kompaktes JSON-Objekt zurück, z. B.:
+{"de":"Restaurant","it":"Ristorante","fr":"Restaurant","hr":"Restoran"}`;
 
   try {
-    const response = await axios.post(
+    const res = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
         model: 'gpt-4',
-        messages: [
-          { role: 'system', content: 'Du bist ein hilfreicher Übersetzer.' },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.3
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.4
       },
       {
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${OPENAI_API_KEY}`
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json'
         }
       }
     );
 
-    const raw = response.data.choices[0].message.content;
+    const raw = res.data.choices[0].message.content.trim();
+    console.log(`🗣️ OpenAI-Antwort für "${term}":\n${raw}`);
 
-    // JSON aus Text extrahieren und parsen
-    const match = raw.match(/\{[\s\S]*?\}/);
-    if (!match) {
-      console.warn(`⚠️ Kein JSON gefunden in der KI-Antwort:\n${raw}`);
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+      console.log(`📦 Geparst:`, parsed);
+    } catch (e) {
+      console.error(`❌ Fehler beim JSON-Parsing für "${term}":`, e.message);
       return {};
     }
 
-    const parsed = JSON.parse(match[0]);
     return parsed;
   } catch (err) {
-    console.error(`❌ Fehler bei OpenAI-Übersetzung: ${err.response?.status || ''} ${err.message}`);
+    console.error(`❌ Fehler bei OpenAI-Anfrage für "${term}":`, err.message);
     return {};
   }
 }
@@ -73,35 +73,39 @@ async function ensureCategory(type) {
     return false;
   }
 
-  const base = {
+  console.log(`➕ Neue Kategorie eingefügt: ${type}`);
+
+  const translations = await translateWithOpenAI(type);
+
+  if (!translations || Object.keys(translations).length === 0) {
+    console.warn(`⚠️ Keine Übersetzung erhalten für "${type}"`);
+  }
+
+  const newCat = {
     name_en: type,
+    name_de: translations.de || null,
+    name_it: translations.it || null,
+    name_fr: translations.fr || null,
+    name_hr: translations.hr || null,
     icon: type,
     active: true,
     sort_order: 9999,
     google_cat_id: type
   };
 
-  // 🔁 OpenAI-Übersetzung holen
-  const translations = await translateWithOpenAI(type);
-
-  if (translations.de) base.name_de = translations.de;
-  if (translations.it) base.name_it = translations.it;
-  if (translations.fr) base.name_fr = translations.fr;
-  if (translations.hr) base.name_hr = translations.hr;
-
   const { data, error } = await supabase
     .from('categories')
-    .insert(base)
+    .insert(newCat)
     .select()
     .single();
 
   if (error) {
     console.error(`❌ Fehler beim Einfügen ${type}:`, error.message);
     return false;
-  } else {
-    console.log(`➕ Neue Kategorie eingefügt: ${type}`);
-    return true;
   }
+
+  console.log(`📥 Eingefügt mit Übersetzungen: ${type}`);
+  return true;
 }
 
 async function run() {
@@ -131,12 +135,12 @@ async function run() {
       }
 
       const types = result.types || [];
-
       if (types.length === 0) {
         console.log(`🔍 types ist leer ([])`);
-      } else {
-        console.log(`🔍 types: ${types.join(', ')}`);
+        continue;
       }
+
+      console.log(`🔍 types: ${types.join(', ')}`);
 
       for (const type of types) {
         const added = await ensureCategory(type);
