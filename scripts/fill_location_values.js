@@ -5,13 +5,12 @@ dotenv.config();
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_KEY // <- KORREKTER VARIABLENNAME
 );
 
 const INPUT_FILE = process.argv[2] || 'data/place_ids.json';
 const DEFAULT_LANGUAGE = 'de';
 
-// Diese Attribute wollen wir einfügen
 const predefinedAttributes = [
   {
     key: 'google_name',
@@ -36,7 +35,6 @@ async function main() {
 
     if (attrErr) throw new Error('Fehler beim Laden der Attribute: ' + attrErr.message);
 
-    // Attribute automatisch hinzufügen, falls sie nicht existieren
     for (const attr of predefinedAttributes) {
       const alreadyExists = existingAttributes.some((a) => a.key === attr.key);
       if (!alreadyExists) {
@@ -55,7 +53,6 @@ async function main() {
       }
     }
 
-    // Nach dem Einfügen erneut abrufen, um IDs zu erhalten
     const { data: attributes } = await supabase.from('attribute_definitions').select('*');
 
     const attrMap = new Map(attributes.map((a) => [a.key, a]));
