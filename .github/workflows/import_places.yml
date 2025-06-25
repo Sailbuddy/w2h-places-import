@@ -1,33 +1,33 @@
-name: 📥 Import Google Places mit Attribut-Scan
+name: Import Google Places (Auto)
 
 on:
   schedule:
-    - cron: '0 2 * * *'  # täglicher Lauf um 02:00 UTC
-  workflow_dispatch:      # manuelles Auslösen möglich
+    - cron: '0 0 * * *'  # Täglich um 00:00 UTC
+  workflow_dispatch:
 
 jobs:
   import:
     runs-on: ubuntu-latest
-
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}  # 👈 wichtig: gleiche Variable wie in extract_place_keys.js
+      SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
     steps:
       - name: 📦 Checkout Repository
         uses: actions/checkout@v3
 
-      - name: 🧰 Setup Node.js
+      - name: ⚙️ Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      - name: 📦 Install Dependencies
-        run: npm install axios dotenv @supabase/supabase-js node-fetch
+      - name: 📥 Install Dependencies
+        run: npm install axios dotenv @supabase/supabase-js
 
-      - name: ✳️ Auto-Erweiterung Attributliste (aus Google API)
-        run: node scripts/extract_place_keys.js
+      - name: 📚 Kategorien abgleichen (aus place_ids_archive.json)
+        run: node scripts/fetch_categories.js data/place_ids_archive.json
 
-      - name: 📍 Import Locations & Attributwerte
-        run: node scripts/import_places.js
+      - name: 🏗️ Orte importieren
+        run: node scripts/import_places.js data/place_ids_archive.json
