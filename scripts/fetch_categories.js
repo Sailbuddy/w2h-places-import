@@ -30,7 +30,7 @@ async function ensureCategory(type) {
 
   if (existing) {
     console.log(`✅ Bereits vorhanden: ${type}`);
-    return false; // nichts neu angelegt
+    return false;
   }
 
   const newCat = {
@@ -60,7 +60,15 @@ async function run() {
   console.log(`📂 Kategorienprüfung für Datei: ${inputFile}`);
 
   for (const entry of placeIds) {
-    const placeId = typeof entry === 'string' ? entry : entry.place_id;
+    const placeId =
+      typeof entry === 'string'
+        ? entry
+        : entry.place_id || entry.id || entry.place || undefined;
+
+    if (!placeId) {
+      console.warn(`⚠️ Ungültiger Eintrag in place_ids.json:`, JSON.stringify(entry));
+      continue;
+    }
 
     try {
       const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${GOOGLE_API_KEY}`;
@@ -72,14 +80,20 @@ async function run() {
         continue;
       }
 
-      const types = result.types || [];
       console.log(`📌 Verarbeite Place ID: ${placeId}`);
-      console.log(`🔍 types: ${types.join(', ')}`);
 
-      if (types.length === 0) {
-        console.log(`⚠️ Keine types vorhanden für ${placeId}`);
+      // 🧪 Logging für types[]
+      if ('types' in result && Array.isArray(result.types)) {
+        if (result.types.length === 0) {
+          console.log(`🔍 types ist leer ([])`);
+        } else {
+          console.log(`🔍 types: ${result.types.join(', ')}`);
+        }
+      } else {
+        console.warn(`⚠️ types-Feld fehlt oder ist kein Array!`);
       }
 
+      const types = result.types || [];
       for (const type of types) {
         const added = await ensureCategory(type);
         if (!added) {
