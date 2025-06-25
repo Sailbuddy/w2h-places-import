@@ -7,7 +7,7 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 
 const filePath = process.argv[2] || 'data/place_ids.json';
-const placeEntries = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+const placeData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
 
 const language = 'de';
 const now = new Date().toISOString();
@@ -20,29 +20,26 @@ const fetchPlaceDetails = async (placeId) => {
 };
 
 const main = async () => {
-  // Lade alle Attributdefinitionen inkl. Schlüssel und Typ
   const { data: attributes, error: attrErr } = await supabase
     .from('attribute_definitions')
-    .select('id, key, input_type');
+    .select('id, google_key, type');
 
   if (attrErr) {
     console.error('Fehler beim Laden der attribute_definitions:', attrErr.message);
     return;
   }
 
-  for (const entry of placeEntries) {
-    const placeId = entry.placeId;
+  for (const { placeId, preferredName } of placeData) {
     const details = await fetchPlaceDetails(placeId);
     if (!details) {
-      console.warn(`⚠️ Keine Details gefunden für Place ID: ${JSON.stringify(entry)}`);
+      console.warn(`⚠️ Keine Details gefunden für Place ID: ${placeId}`);
       continue;
     }
 
-    // Hole passende location_id aus Supabase
     const { data: loc, error: locErr } = await supabase
       .from('locations')
       .select('id')
-      .eq('place_id', placeId)
+      .eq('google_place_id', placeId) // <-- angepasst
       .maybeSingle();
 
     if (locErr || !loc) {
@@ -53,28 +50,28 @@ const main = async () => {
     const location_id = loc.id;
 
     for (const attr of attributes) {
-      const rawValue = details[attr.key];
+      const rawValue = details[attr.google_key];
       if (rawValue === undefined || rawValue === null) continue;
 
-      const entryData = {
+      const entry = {
         location_id,
         attribute_id: attr.id,
         language_code: language,
         updated_at: now,
       };
 
-      switch (attr.input_type) {
+      switch (attr.type) {
         case 'text':
-          entryData.value_text = String(rawValue);
+          entry.value_text = String(rawValue);
           break;
         case 'bool':
-          entryData.value_bool = Boolean(rawValue);
+          entry.value_bool = Boolean(rawValue);
           break;
         case 'number':
-          entryData.value_number = Number(rawValue);
+          entry.value_number = Number(rawValue);
           break;
         case 'option':
-          entryData.value_option = String(rawValue);
+          entry.value_option = String(rawValue);
           break;
         default:
           continue;
@@ -82,14 +79,14 @@ const main = async () => {
 
       const { error: insertErr } = await supabase
         .from('location_values')
-        .upsert(entryData, { ignoreDuplicates: false });
+        .upsert(entry, { ignoreDuplicates: false });
 
       if (insertErr) {
-        console.error(`❌ Fehler beim Einfügen von Attribut ${attr.key}:`, insertErr.message);
+        console.error(`❌ Fehler beim Einfügen von Attribut ${attr.google_key}:`, insertErr.message);
       }
     }
 
-    console.log(`✅ Werte für ${details.name || placeId} gespeichert.`);
+    console.log(`✅ Werte für ${details.name || preferredName || placeId} gespeichert.`);
   }
 };
 
