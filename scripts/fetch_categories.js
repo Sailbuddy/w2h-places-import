@@ -8,10 +8,10 @@ dotenv.config();
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-// ▶️ Argument: JSON-Dateiname
 const inputFile = process.argv[2] || 'data/place_ids.json';
 
 if (!fs.existsSync(inputFile)) {
@@ -20,6 +20,39 @@ if (!fs.existsSync(inputFile)) {
 }
 
 const placeIds = JSON.parse(fs.readFileSync(inputFile, 'utf8'));
+
+async function translateCategoryName(name_en) {
+  const prompt = `Übersetze den Begriff "${name_en}" als Kategoriebeschreibung für eine Google Maps Karte jeweils mit einem einzelnen Wort in die folgenden Sprachen: Deutsch (de), Italienisch (it), Französisch (fr), Kroatisch (hr). Gib das Ergebnis als JSON-Objekt zurück mit den Schlüsseln name_de, name_it, name_fr, name_hr.`;
+
+  try {
+    const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+      model: 'gpt-4',
+      messages: [
+        { role: 'system', content: 'Du bist ein hilfreicher Übersetzer für Begriffe aus der Kartenkategorisierung.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.3
+    }, {
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const message = response.data.choices[0].message.content;
+    const translations = JSON.parse(message);
+    return translations;
+
+  } catch (err) {
+    console.error(`❌ Fehler bei der Übersetzung von "${name_en}":`, err.message);
+    return {
+      name_de: null,
+      name_it: null,
+      name_fr: null,
+      name_hr: null
+    };
+  }
+}
 
 async function ensureCategory(type) {
   const { data: existing } = await supabase
@@ -33,8 +66,15 @@ async function ensureCategory(type) {
     return false;
   }
 
+  console.log(`🌍 Übersetze Kategorie "${type}" ...`);
+  const translations = await translateCategoryName(type);
+
   const newCat = {
     name_en: type,
+    name_de: translations.name_de,
+    name_it: translations.name_it,
+    name_fr: translations.name_fr,
+    name_hr: translations.name_hr,
     icon: type,
     active: true,
     sort_order: 9999,
@@ -82,7 +122,6 @@ async function run() {
         continue;
       }
 
-      // 🧪 Logging für types[]
       if ('types' in result && Array.isArray(result.types)) {
         if (result.types.length === 0) {
           console.log(`🔍 types ist leer ([])`);
