@@ -1,111 +1,109 @@
-import fs from 'fs';
+// scripts/extract_place_keys.js
+More actions
 import axios from 'axios';
-import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
 
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_KEY;
+// ❗ Diese Variablen müssen mit import_places.js & import_places.yml übereinstimmen:
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // WICHTIG: angepasst für bestehende YML
+const supabaseKey = process.env.SUPABASE_KEY;  // Wichtig: NICHT SERVICE_ROLE_KEY
+const googleApiKey = process.env.GOOGLE_API_KEY;
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+if (!supabaseKey) throw new Error('SUPABASE_SERVICE_ROLE_KEY is required.');
+if (!googleApiKey) throw new Error('GOOGLE_API_KEY is required.');
+if (!supabaseKey) throw new Error('❌ SUPABASE_KEY ist erforderlich.');
+if (!googleApiKey) throw new Error('❌ GOOGLE_API_KEY ist erforderlich.');
 
-// ▶️ Argument: JSON-Dateiname
-const inputFile = process.argv[2] || 'data/place_ids.json';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-if (!fs.existsSync(inputFile)) {
-  console.error(`❌ Datei nicht gefunden: ${inputFile}`);
-  process.exit(1);
+// Hilfsfunktionen
+// 🔎 Rekursive Key-Extraktion aus einem Objekt
+function extractKeys(obj, prefix = '') {
+  let keys = [];
+  for (const key in obj) {
+@@ -29,6 +32,7 @@ function extractKeys(obj, prefix = '') {
+  return keys;
 }
 
-const placeIds = JSON.parse(fs.readFileSync(inputFile, 'utf8'));
+// 🔧 Typbestimmung
+function determineType(obj, keyPath) {
+  const keys = keyPath.split('.');
+  let val = obj;
+@@ -40,23 +44,29 @@ function determineType(obj, keyPath) {
+  return 'text';
+}
 
-async function ensureCategory(type) {
-  const { data: existing } = await supabase
-    .from('categories')
-    .select('id')
-    .eq('google_cat_id', type)
-    .maybeSingle();
+// Place Details von Google abrufen
+// 🌐 Google Place Details API aufrufen
+async function fetchPlaceDetails(placeId, language = 'de') {
+  const fields = 'address_component,adr_address,formatted_address,geometry,icon,name,opening_hours,photos,place_id,plus_code,type,url,vicinity,formatted_phone_number,website,price_level,rating,user_ratings_total';
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&language=${language}&key=${googleApiKey}`;
 
-  if (existing) {
-    console.log(`✅ Bereits vorhanden: ${type}`);
-    return false;
-  }
+  const res = await axios.get(url);
+  if (res.data.status !== 'OK') throw new Error(`Google API Error: ${res.data.status}`);
+  if (res.data.status !== 'OK') throw new Error(`Google API Fehler: ${res.data.status}`);
+  return res.data.result;
+}
 
-  const newCat = {
-    name_en: type,
-    icon: type,
-    active: true,
-    sort_order: 9999,
-    google_cat_id: type
-  };
-
+// DB prüfen + einfügen
+// 🔐 Attributexistenz prüfen
+async function attributeExists(key) {
+  const { data, error } = await supabase.from('attribute_definitions').select('key').eq('key', key).single();
+  if (error && error.code !== 'PGRST116') throw new Error(`DB check error: ${error.message}`);
   const { data, error } = await supabase
-    .from('categories')
-    .insert(newCat)
-    .select()
+    .from('attribute_definitions')
+    .select('key')
+    .eq('key', key)
     .single();
 
-  if (error) {
-    console.error(`❌ Fehler beim Einfügen ${type}:`, error.message);
-    return false;
-  } else {
-    console.log(`➕ Neue Kategorie eingefügt: ${type}`);
-    return true;
-  }
+  if (error && error.code !== 'PGRST116') throw new Error(`DB-Fehler: ${error.message}`);
+  return !!data;
 }
 
-async function run() {
-  console.log(`📂 Kategorienprüfung für Datei: ${inputFile}`);
+// ➕ Attribut einfügen
+async function insertAttributeDefinition(key, input_type) {
+  const { error } = await supabase.from('attribute_definitions').insert({
+    category_id: 1,
+@@ -66,18 +76,18 @@ async function insertAttributeDefinition(key, input_type) {
+    input_type,
+    is_active: false
+  });
+  if (error) throw new Error(`Insert error: ${error.message}`);
+  if (error) throw new Error(`Insert-Fehler: ${error.message}`);
+}
 
-  for (const entry of placeIds) {
-    const placeId =
-      typeof entry === 'string'
-        ? entry
-        : entry.place_id || entry.id || entry.place || undefined;
+// Hauptlogik
+// ▶️ Hauptfunktion
+async function scanPlaceIdsFromFile(path = 'data/place_ids_archive.json') {
+  const raw = await import(`file:///${process.cwd()}/${path}`, {
+    assert: { type: 'json' }
+  });
+  const ids = raw.default.map(e => typeof e === 'string' ? e : e.placeId);
 
-    if (!placeId) {
-      console.warn(`⚠️ Ungültiger Eintrag in place_ids.json:`, JSON.stringify(entry));
-      continue;
-    }
-
+  for (const placeId of ids) {
+    console.log(`▶️ Scanning ${placeId}`);
+    console.log(`▶️ Scanne ${placeId}`);
     try {
-      const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${GOOGLE_API_KEY}`;
-      const res = await axios.get(url);
-      const result = res.data.result;
-
-      if (!result) {
-        console.warn(`⚠️ Kein result für Place ID: ${placeId}`);
-        continue;
-      }
-
-      console.log(`📌 Verarbeite Place ID: ${placeId}`);
-
-      // 🧪 Logging für types[]
-      if ('types' in result && Array.isArray(result.types)) {
-        if (result.types.length === 0) {
-          console.log(`🔍 types ist leer ([])`);
-        } else {
-          console.log(`🔍 types: ${result.types.join(', ')}`);
-        }
-      } else {
-        console.warn(`⚠️ types-Feld fehlt oder ist kein Array!`);
-      }
-
-      const types = result.types || [];
-      for (const type of types) {
-        const added = await ensureCategory(type);
-        if (!added) {
-          console.log(`⚠️ Ignoriert: ${type} (bereits vorhanden oder Fehler)`);
+      const details = await fetchPlaceDetails(placeId);
+      const keys = extractKeys(details);
+@@ -86,15 +96,15 @@ async function scanPlaceIdsFromFile(path = 'data/place_ids_archive.json') {
+        if (!(await attributeExists(key))) {
+          const type = determineType(details, key);
+          await insertAttributeDefinition(key, type);
+          console.log(`➕ ${key} (${type})`);
+          console.log(`➕ Neues Attribut: ${key} (${type})`);
         }
       }
     } catch (err) {
-      console.error(`❌ Fehler bei Place ${placeId}:`, err.message);
+      console.error(`⚠️ Fehler bei ${placeId}: ${err.message}`);
     }
   }
 
-  console.log(`✅ Kategorie-Sync abgeschlossen für ${placeIds.length} Einträge.`);
+  console.log('✅ Alle Attribute geprüft und ggf. ergänzt.');
+  console.log('✅ Attributscan abgeschlossen.');
 }
 
-run();
+scanPlaceIdsFromFile().catch(console.error);
