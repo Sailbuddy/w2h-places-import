@@ -11,6 +11,7 @@ jobs:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
     steps:
       - name: Checkout Repo
@@ -22,13 +23,16 @@ jobs:
           node-version: '20'
 
       - name: Install Dependencies
-        run: npm install @supabase/supabase-js node-fetch dotenv
+        run: npm install @supabase/supabase-js node-fetch dotenv axios
+
+      - name: Kategorien abgleichen (aus place_ids.json)
+        run: node scripts/fetch_categories.js data/place_ids.json
 
       - name: Scan Attribute Definitions
         run: node scripts/import_attribute_definitions.js
 
       - name: Import Locations (Manuell)
-        run: node scripts/import_places.js
+        run: node scripts/import_places.js data/place_ids.json
 
       - name: Place IDs Datei leeren
         run: node scripts/place_ids_leeren.js
