@@ -5,15 +5,13 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// 🔑 API Keys
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; // WICHTIG: konsistent mit yml
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// 📁 Dateiname über Argument oder Default
 const inputFile = process.argv[2] || 'data/place_ids.json';
 
 if (!fs.existsSync(inputFile)) {
@@ -23,7 +21,6 @@ if (!fs.existsSync(inputFile)) {
 
 const placeIds = JSON.parse(fs.readFileSync(inputFile, 'utf8'));
 
-// 🧠 KI-Übersetzer
 async function translateWithOpenAI(termEn) {
   const prompt = `
 Gib mir den Begriff "${termEn}" auf folgenden Sprachen als einfache Wörter oder Kategorienbezeichnungen zurück:
@@ -38,7 +35,7 @@ de: ...
 it: ...
 fr: ...
 hr: ...
-`;
+  `;
 
   try {
     const response = await axios.post(
@@ -57,10 +54,13 @@ hr: ...
     );
 
     const content = response.data.choices[0].message.content;
+
     const translations = {};
     for (const line of content.split('\n')) {
       const [lang, value] = line.split(':').map(s => s.trim());
-      if (lang && value) translations[lang] = value;
+      if (lang && value) {
+        translations[lang] = value;
+      }
     }
 
     return {
@@ -70,12 +70,16 @@ hr: ...
       name_hr: translations.hr || null,
     };
   } catch (error) {
-    console.error(`❌ OpenAI-Fehler bei "${termEn}":`, error.response?.data || error.message);
-    return { name_de: null, name_it: null, name_fr: null, name_hr: null };
+    console.error(`❌ Fehler bei der Übersetzung von "${termEn}":`, error?.response?.status, error?.response?.data);
+    return {
+      name_de: null,
+      name_it: null,
+      name_fr: null,
+      name_hr: null,
+    };
   }
 }
 
-// 🧩 Kategorie eintragen
 async function ensureCategory(type) {
   const { data: existing } = await supabase
     .from('categories')
@@ -88,10 +92,10 @@ async function ensureCategory(type) {
     return false;
   }
 
+  console.log(`🧠 Neue Kategorie erkannt: ${type} → sende an KI zur Übersetzung...`);
   const translations = await translateWithOpenAI(type);
 
   const newCat = {
-    google_cat_id: type,
     name_en: type,
     name_de: translations.name_de,
     name_it: translations.name_it,
@@ -100,48 +104,61 @@ async function ensureCategory(type) {
     icon: type,
     active: true,
     sort_order: 9999,
+    google_cat_id: type,
   };
 
-  const { error } = await supabase.from('categories').insert(newCat);
-  if (error) {
-    console.error(`❌ Fehler beim Einfügen von ${type}:`, error.message);
-    return false;
-  }
+  const { data, error } = await supabase
+    .from('categories')
+    .insert(newCat)
+    .select()
+    .single();
 
-  console.log(`➕ Neue Kategorie eingefügt: ${type}`);
-  return true;
+  if (error) {
+    console.error(`❌ Fehler beim Einfügen ${type}:`, error.message);
+    return false;
+  } else {
+    console.log(`➕ Neue Kategorie eingefügt: ${type}`);
+    return true;
+  }
 }
 
-// ▶️ Hauptfunktion
 async function run() {
   console.log(`📂 Kategorienprüfung für Datei: ${inputFile}`);
 
   for (const entry of placeIds) {
-    const placeId = typeof entry === 'string'
-      ? entry
-      : entry.place_id || entry.placeId || entry.id || entry.place || undefined;
+    const placeId =
+      typeof entry === 'string'
+        ? entry
+        : entry.place_id || entry.placeId || entry.id || entry.place || undefined;
 
     if (!placeId) {
-      console.warn(`⚠️ Ungültiger Eintrag: ${JSON.stringify(entry)}`);
+      console.warn(`⚠️ Ungültiger Eintrag in place_ids.json: ${JSON.stringify(entry)}`);
       continue;
     }
 
-    console.log(`📌 Prüfe Place ID: ${placeId}`);
+    console.log(`📌 Verarbeite Place ID: ${placeId}`);
 
     try {
       const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${GOOGLE_API_KEY}`;
       const res = await axios.get(url);
       const result = res.data.result;
 
-      if (!result || !result.types || !Array.isArray(result.types)) {
-        console.warn(`⚠️ Keine gültigen types bei Place ID ${placeId}`);
+      if (!result) {
+        console.warn(`⚠️ Kein result für Place ID: ${placeId}`);
         continue;
       }
 
-      for (const type of result.types) {
+      const types = result.types || [];
+      if (types.length === 0) {
+        console.log(`🔍 types ist leer ([])`);
+      } else {
+        console.log(`🔍 types: ${types.join(', ')}`);
+      }
+
+      for (const type of types) {
         const added = await ensureCategory(type);
         if (!added) {
-          console.log(`⚠️ Ignoriert: ${type}`);
+          console.log(`⚠️ Ignoriert: ${type} (bereits vorhanden oder Fehler)`);
         }
       }
     } catch (err) {
