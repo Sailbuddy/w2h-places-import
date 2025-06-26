@@ -53,6 +53,16 @@ async function resolveCategoryId(googleTypes) {
 async function insertOrUpdateLocation(placeEntry, placeDetails) {
   const displayName = placeEntry.preferredName || placeDetails?.name || '(ohne Namen)';
   const categoryId = await resolveCategoryId(placeDetails?.types);
+  const now = new Date().toISOString();
+
+  // Prüfen, ob Location bereits existiert
+  const { data: existingData, error: fetchError } = await supabase
+    .from('locations')
+    .select('id')
+    .eq('google_place_id', placeEntry.placeId)
+    .maybeSingle();
+
+  const isUpdate = !!existingData;
 
   const { data, error } = await supabase.from('locations').upsert([{
     google_place_id: placeEntry.placeId,
@@ -64,6 +74,8 @@ async function insertOrUpdateLocation(placeEntry, placeDetails) {
     phone: placeDetails?.formatted_phone_number || null,
     rating: placeDetails?.rating || null,
     price_level: placeDetails?.price_level || null,
+    created_at: isUpdate ? undefined : now,
+    updated_at: now
   }], { onConflict: 'google_place_id' }).select().single();
 
   if (error) {
