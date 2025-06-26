@@ -2,16 +2,14 @@ require("dotenv").config();
 const { createClient } = require("@supabase/supabase-js");
 const axios = require("axios");
 
-// 🔐 Umgebungsvariablen korrekt lesen
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-const LANGUAGES = ["de", "en", "it", "fr"];
+const LANGUAGES = ["de", "en", "it", "fr", "hr"];
 
-// 🧠 OpenAI Übersetzung
 async function translateWithOpenAI(text, targetLang) {
   try {
     const response = await axios.post(
@@ -43,14 +41,12 @@ async function translateWithOpenAI(text, targetLang) {
   }
 }
 
-// 🌐 Place Details von Google holen
 async function getPlaceDetails(placeId, lang = "en") {
   const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&language=${lang}&key=${GOOGLE_API_KEY}`;
   const response = await axios.get(url);
   return response.data.result;
 }
 
-// 🔍 Schlüsselpfade aus JSON extrahieren
 function getValueFromDetails(details, keyPath) {
   const keys = keyPath.split(".");
   let value = details;
@@ -65,7 +61,6 @@ function getValueFromDetails(details, keyPath) {
   return value?.toString() ?? null;
 }
 
-// 🚀 Hauptlauf
 async function enrichLocationValues() {
   const { data: locations, error: locError } = await supabase.from("locations").select("*");
   if (locError) {
@@ -87,15 +82,30 @@ async function enrichLocationValues() {
     const baseDetails = await getPlaceDetails(placeId, "en");
 
     for (const attr of attributes) {
-      const rawValue = getValueFromDetails(baseDetails, attr.key);
-      if (!rawValue) continue;
+      let rawValue = null;
+
+      // 🖼 Spezialfall: Bilder
+      if (attr.key.startsWith("photo_")) {
+        const index = parseInt(attr.key.split("_")[1], 10) - 1;
+        const photo = baseDetails.photos?.[index];
+        if (!photo) continue;
+
+        rawValue = {
+          photo_reference: photo.photo_reference,
+          width: photo.width,
+          height: photo.height
+        };
+      } else {
+        rawValue = getValueFromDetails(baseDetails, attr.key);
+        if (!rawValue) continue;
+      }
 
       const langs = attr.multilingual ? LANGUAGES : ["de"];
 
       for (const lang of langs) {
         let translatedValue = rawValue;
 
-        if (attr.multilingual && lang !== "en") {
+        if (attr.multilingual && lang !== "en" && typeof rawValue === "string") {
           translatedValue = await translateWithOpenAI(rawValue, lang);
         }
 
@@ -106,25 +116,29 @@ async function enrichLocationValues() {
           updated_at: new Date().toISOString()
         };
 
-        // 🔀 Typbasierte Zuweisung zu value_x
-        switch (attr.input_type) {
-          case "text":
-          case "json":
-            insertData.value_text = translatedValue;
-            break;
-          case "number":
-            insertData.value_number = parseFloat(translatedValue);
-            break;
-          case "boolean":
-          case "bool":
-            insertData.value_bool = translatedValue === "true" || translatedValue === true;
-            break;
-          case "option":
-            insertData.value_option = translatedValue;
-            break;
-          default:
-            console.warn(`⚠️ Unbekannter input_type (${attr.input_type}) für ${attr.key}`);
-            continue;
+        // ⬇️ Typzuweisung
+        if (attr.key.startsWith("photo_")) {
+          insertData.value_json = rawValue;
+        } else {
+          switch (attr.input_type) {
+            case "text":
+            case "json":
+              insertData.value_text = translatedValue;
+              break;
+            case "number":
+              insertData.value_number = parseFloat(translatedValue);
+              break;
+            case "boolean":
+            case "bool":
+              insertData.value_bool = translatedValue === "true" || translatedValue === true;
+              break;
+            case "option":
+              insertData.value_option = translatedValue;
+              break;
+            default:
+              console.warn(`⚠️ Unbekannter input_type (${attr.input_type}) für ${attr.key}`);
+              continue;
+          }
         }
 
         const { error } = await supabase.from("location_values").upsert(insertData, {
@@ -141,5 +155,4 @@ async function enrichLocationValues() {
   }
 }
 
-// ▶️ Start
 enrichLocationValues();
