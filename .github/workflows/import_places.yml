@@ -35,3 +35,6 @@ jobs:
 
       - name: 📍 Import Locations & Attributwerte
         run: node scripts/import_places.js data/place_ids_archive.json
+
+      - name: 🏷️ Name + Beschreibung einfügen (mehrsprachig)
+        run: node scripts/fill_names_and_descriptions.js data/place_ids_archive.json
