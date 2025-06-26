@@ -40,4 +40,4 @@ jobs:
         run: node scripts/fill_names_and_descriptions.js data/place_ids_archive.json
 
       - name: 🌍 Attributwerte mehrsprachig & strukturiert einfügen
-        run: node scripts/enrich_location_values.js
+        run: node scripts/enrich_location_values.js data/place_ids_archive.json
