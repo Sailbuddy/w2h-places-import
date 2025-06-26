@@ -6,13 +6,11 @@ dotenv.config();
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-// 🔁 Eingabedatei aus Argument oder Standardwert
 const filepath = process.argv[2] || 'data/place_ids_archive.json';
 
-// 🔎 Google Place Details abrufen
 async function fetchGooglePlaceData(placeId, language) {
   const apiKey = process.env.GOOGLE_API_KEY;
-  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=name,formatted_address,website,url,types,opening_hours,formatted_phone_number,rating,price_level&language=${language}&key=${apiKey}`;
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=name,formatted_address,website,url,types,opening_hours,formatted_phone_number,rating,price_level,geometry,plus_code&language=${language}&key=${apiKey}`;
 
   try {
     const response = await fetch(url);
@@ -30,7 +28,6 @@ async function fetchGooglePlaceData(placeId, language) {
   }
 }
 
-// 📥 Kategorie-ID aus erster Google-Type ermitteln
 async function resolveCategoryId(googleTypes) {
   if (!googleTypes || googleTypes.length === 0) return 1;
   const firstType = googleTypes[0];
@@ -49,22 +46,17 @@ async function resolveCategoryId(googleTypes) {
   return data.id;
 }
 
-// 📥 Location einfügen oder aktualisieren
 async function insertOrUpdateLocation(placeEntry, placeDetails) {
   const displayName = placeEntry.preferredName || placeDetails?.name || '(ohne Namen)';
   const categoryId = await resolveCategoryId(placeDetails?.types);
+
   const now = new Date().toISOString();
 
-  // Prüfen ob der Datensatz bereits existiert (wegen created_at)
-  const { data: existing, error: fetchError } = await supabase
+  const { data: existing, error: lookupError } = await supabase
     .from('locations')
-    .select('id, created_at')
+    .select('id')
     .eq('google_place_id', placeEntry.placeId)
     .maybeSingle();
-
-  if (fetchError) {
-    throw new Error(`❌ Fehler beim Lesen bestehender Location: ${fetchError.message}`);
-  }
 
   const { data, error } = await supabase.from('locations').upsert([{
     google_place_id: placeEntry.placeId,
@@ -76,8 +68,11 @@ async function insertOrUpdateLocation(placeEntry, placeDetails) {
     phone: placeDetails?.formatted_phone_number || null,
     rating: placeDetails?.rating || null,
     price_level: placeDetails?.price_level || null,
-    created_at: existing?.created_at || now,
+    lat: placeDetails?.geometry?.location?.lat || null,
+    lng: placeDetails?.geometry?.location?.lng || null,
+    plus_code: placeDetails?.plus_code?.global_code || null,
     updated_at: now,
+    created_at: existing ? undefined : now
   }], { onConflict: 'google_place_id' }).select().single();
 
   if (error) {
@@ -88,7 +83,6 @@ async function insertOrUpdateLocation(placeEntry, placeDetails) {
   return data;
 }
 
-// 🧩 Attribut-Mapping laden
 async function loadAttributeMapping() {
   const { data, error } = await supabase
     .from('attribute_definitions')
@@ -104,11 +98,9 @@ async function loadAttributeMapping() {
   return mapping;
 }
 
-// 🌍 Location-Werte in mehreren Sprachen einfügen
 async function insertLocationValues(locationId, placeDetails, attributeMapping) {
   const languages = ['de', 'en', 'it', 'hr', 'fr'];
   const inserts = [];
-  const now = new Date().toISOString();
 
   for (const lang of languages) {
     const nameKey = `name_${lang}`;
@@ -120,7 +112,7 @@ async function insertLocationValues(locationId, placeDetails, attributeMapping) 
         attribute_id: attributeMapping.name,
         value_text: placeDetails[nameKey],
         language_code: lang,
-        updated_at: now,
+        updated_at: new Date().toISOString(),
       });
     }
 
@@ -130,7 +122,7 @@ async function insertLocationValues(locationId, placeDetails, attributeMapping) 
         attribute_id: attributeMapping.description,
         value_text: placeDetails[descKey],
         language_code: lang,
-        updated_at: now,
+        updated_at: new Date().toISOString(),
       });
     }
   }
@@ -142,7 +134,6 @@ async function insertLocationValues(locationId, placeDetails, attributeMapping) 
   }
 }
 
-// 📂 Datei mit Place IDs laden
 function loadPlaceIdsFromFile(filepath) {
   try {
     const raw = fs.readFileSync(filepath, 'utf-8');
@@ -158,7 +149,6 @@ function loadPlaceIdsFromFile(filepath) {
   }
 }
 
-// ▶️ Hauptlauf
 async function processPlaces() {
   console.log(`📦 Starte Import von Datei: ${filepath}`);
   const placeEntries = loadPlaceIdsFromFile(filepath);
