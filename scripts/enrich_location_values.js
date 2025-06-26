@@ -3,14 +3,31 @@
 require("dotenv").config();
 const { createClient } = require("@supabase/supabase-js");
 const axios = require("axios");
+const fs = require("fs");
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_KEY; // ✔ angepasst
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY); // ✔ angepasst
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 const LANGUAGES = ["de", "en", "it", "fr", "hr"];
+const filepath = process.argv[2] || "data/place_ids.json";
+
+function loadPlaceIdsFromFile(path) {
+  try {
+    const raw = fs.readFileSync(path, "utf-8");
+    const json = JSON.parse(raw);
+    return json.map((entry) =>
+      typeof entry === "string"
+        ? { placeId: entry, preferredName: null }
+        : { placeId: entry.placeId, preferredName: entry.preferredName || null }
+    );
+  } catch (err) {
+    console.error(`❌ Fehler beim Lesen der Datei ${path}:`, err.message);
+    return [];
+  }
+}
 
 async function translateWithOpenAI(text, targetLang) {
   try {
@@ -21,19 +38,19 @@ async function translateWithOpenAI(text, targetLang) {
         messages: [
           {
             role: "system",
-            content: `Übersetze folgenden Text ins ${targetLang}. Gib nur den übersetzten Text zurück.`
+            content: `Übersetze folgenden Text ins ${targetLang}. Gib nur den übersetzten Text zurück.`,
           },
           {
             role: "user",
-            content: text
-          }
-        ]
+            content: text,
+          },
+        ],
       },
       {
         headers: {
           Authorization: `Bearer ${OPENAI_API_KEY}`,
-          "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+        },
       }
     );
     return response.data.choices[0].message.content.trim();
@@ -64,9 +81,9 @@ function getValueFromDetails(details, keyPath) {
 }
 
 async function enrichLocationValues() {
-  const { data: locations, error: locError } = await supabase.from("locations").select("*");
-  if (locError) {
-    console.error("❌ Fehler beim Laden der Locations:", locError.message);
+  const placeEntries = loadPlaceIdsFromFile(filepath);
+  if (placeEntries.length === 0) {
+    console.warn("⚠️ Keine gültigen Place IDs gefunden.");
     return;
   }
 
@@ -76,9 +93,19 @@ async function enrichLocationValues() {
     return;
   }
 
-  for (const location of locations) {
-    const placeId = location.google_place_id;
-    if (!placeId) continue;
+  for (const entry of placeEntries) {
+    const placeId = entry.placeId;
+
+    const { data: location, error: locError } = await supabase
+      .from("locations")
+      .select("id, display_name")
+      .eq("google_place_id", placeId)
+      .maybeSingle();
+
+    if (locError || !location) {
+      console.warn(`⚠️ Keine Location gefunden für ${placeId}`);
+      continue;
+    }
 
     console.log(`📍 Bearbeite: ${location.display_name}`);
     const baseDetails = await getPlaceDetails(placeId, "en");
@@ -95,7 +122,7 @@ async function enrichLocationValues() {
         rawValue = {
           photo_reference: photo.photo_reference,
           width: photo.width,
-          height: photo.height
+          height: photo.height,
         };
       } else {
         rawValue = getValueFromDetails(baseDetails, attr.key);
@@ -115,10 +142,9 @@ async function enrichLocationValues() {
           location_id: location.id,
           attribute_id: attr.attribute_id,
           language_code: lang,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         };
 
-        // ⬇️ Typzuweisung
         if (attr.key.startsWith("photo_")) {
           insertData.value_json = rawValue;
         } else {
@@ -144,7 +170,7 @@ async function enrichLocationValues() {
         }
 
         const { error } = await supabase.from("location_values").upsert(insertData, {
-          onConflict: "location_id,attribute_id,language_code"
+          onConflict: "location_id,attribute_id,language_code",
         });
 
         if (error) {
@@ -155,6 +181,8 @@ async function enrichLocationValues() {
       }
     }
   }
+
+  console.log("🎉 Attribut-Erweiterung abgeschlossen.");
 }
 
 enrichLocationValues();
