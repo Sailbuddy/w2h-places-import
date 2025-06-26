@@ -1,4 +1,4 @@
-name: Manueller Import Google Places
+name: 📥 Manueller Import Google Places
 
 on:
   workflow_dispatch:
@@ -23,13 +23,13 @@ jobs:
           node-version: '20'
 
       - name: 📚 Install Dependencies
-        run: npm install @supabase/supabase-js node-fetch dotenv axios
+        run: npm install axios dotenv @supabase/supabase-js node-fetch
+
+      - name: ✳️ Auto-Erweiterung Attributliste (aus Google API)
+        run: node scripts/import_attribute_definitions.js data/place_ids.json
 
       - name: 🧠 Kategorien ermitteln (aus place_ids.json)
         run: node scripts/fetch_categories.js data/place_ids.json
-
-      - name: 🧱 Attributdefinitionen aktualisieren
-        run: node scripts/import_attribute_definitions.js data/place_ids.json
 
       - name: 📌 Locations importieren (manuell)
         run: node scripts/import_places.js data/place_ids.json
