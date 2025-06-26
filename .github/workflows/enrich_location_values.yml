@@ -1,0 +1,30 @@
+name: Enrich Location Values
+
+on:
+  workflow_dispatch:  # Manuell auslösbar
+  schedule:
+    - cron: '0 2 * * *'  # Täglich um 02:00 UTC (04:00 MEZ)
+
+jobs:
+  enrich:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    steps:
+      - name: 📥 Repository klonen
+        uses: actions/checkout@v3
+
+      - name: 🟢 Node.js einrichten
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: 📦 Abhängigkeiten installieren
+        run: npm install axios dotenv @supabase/supabase-js
+
+      - name: 🚀 enrich_location_values.js ausführen
+        run: node scripts/enrich_location_values.js
