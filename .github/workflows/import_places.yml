@@ -28,7 +28,7 @@ jobs:
         run: npm install axios dotenv @supabase/supabase-js node-fetch
 
       - name: ✳️ Auto-Erweiterung Attributliste (aus Google API)
-        run: node scripts/extract_place_keys.js
+        run: node scripts/import_attribute_definitions.js data/place_ids_archive.json
 
       - name: 🧠 Automatischer Kategorien-Sync inkl. Übersetzung (KI)
         run: node scripts/fetch_categories.js data/place_ids_archive.json
