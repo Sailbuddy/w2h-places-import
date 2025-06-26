@@ -2,14 +2,16 @@ require("dotenv").config();
 const { createClient } = require("@supabase/supabase-js");
 const axios = require("axios");
 
+// 🔐 Umgebungsvariablen korrekt lesen
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env(process.env.SUPABASE_SERVICE_ROLE_KEY);
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 const LANGUAGES = ["de", "en", "it", "fr"];
 
+// 🧠 OpenAI Übersetzung
 async function translateWithOpenAI(text, targetLang) {
   try {
     const response = await axios.post(
@@ -41,12 +43,14 @@ async function translateWithOpenAI(text, targetLang) {
   }
 }
 
+// 🌐 Place Details von Google holen
 async function getPlaceDetails(placeId, lang = "en") {
   const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&language=${lang}&key=${GOOGLE_API_KEY}`;
   const response = await axios.get(url);
   return response.data.result;
 }
 
+// 🔍 Schlüsselpfade aus JSON extrahieren
 function getValueFromDetails(details, keyPath) {
   const keys = keyPath.split(".");
   let value = details;
@@ -61,16 +65,17 @@ function getValueFromDetails(details, keyPath) {
   return value?.toString() ?? null;
 }
 
+// 🚀 Hauptlauf
 async function enrichLocationValues() {
   const { data: locations, error: locError } = await supabase.from("locations").select("*");
   if (locError) {
-    console.error("❌ Fehler beim Abruf der Locations:", locError.message);
+    console.error("❌ Fehler beim Laden der Locations:", locError.message);
     return;
   }
 
   const { data: attributes, error: attrError } = await supabase.from("attribute_definitions").select("*");
   if (attrError) {
-    console.error("❌ Fehler beim Abruf der Attribute:", attrError.message);
+    console.error("❌ Fehler beim Laden der Attribute:", attrError.message);
     return;
   }
 
@@ -101,6 +106,7 @@ async function enrichLocationValues() {
           updated_at: new Date().toISOString()
         };
 
+        // 🔀 Typbasierte Zuweisung zu value_x
         switch (attr.input_type) {
           case "text":
           case "json":
@@ -135,4 +141,5 @@ async function enrichLocationValues() {
   }
 }
 
+// ▶️ Start
 enrichLocationValues();
