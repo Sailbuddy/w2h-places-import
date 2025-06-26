@@ -55,14 +55,16 @@ async function insertOrUpdateLocation(placeEntry, placeDetails) {
   const categoryId = await resolveCategoryId(placeDetails?.types);
   const now = new Date().toISOString();
 
-  // Prüfen, ob Location bereits existiert
-  const { data: existingData, error: fetchError } = await supabase
+  // Prüfen ob der Datensatz bereits existiert (wegen created_at)
+  const { data: existing, error: fetchError } = await supabase
     .from('locations')
-    .select('id')
+    .select('id, created_at')
     .eq('google_place_id', placeEntry.placeId)
     .maybeSingle();
 
-  const isUpdate = !!existingData;
+  if (fetchError) {
+    throw new Error(`❌ Fehler beim Lesen bestehender Location: ${fetchError.message}`);
+  }
 
   const { data, error } = await supabase.from('locations').upsert([{
     google_place_id: placeEntry.placeId,
@@ -74,8 +76,8 @@ async function insertOrUpdateLocation(placeEntry, placeDetails) {
     phone: placeDetails?.formatted_phone_number || null,
     rating: placeDetails?.rating || null,
     price_level: placeDetails?.price_level || null,
-    created_at: isUpdate ? undefined : now,
-    updated_at: now
+    created_at: existing?.created_at || now,
+    updated_at: now,
   }], { onConflict: 'google_place_id' }).select().single();
 
   if (error) {
@@ -106,6 +108,7 @@ async function loadAttributeMapping() {
 async function insertLocationValues(locationId, placeDetails, attributeMapping) {
   const languages = ['de', 'en', 'it', 'hr', 'fr'];
   const inserts = [];
+  const now = new Date().toISOString();
 
   for (const lang of languages) {
     const nameKey = `name_${lang}`;
@@ -117,7 +120,7 @@ async function insertLocationValues(locationId, placeDetails, attributeMapping) 
         attribute_id: attributeMapping.name,
         value_text: placeDetails[nameKey],
         language_code: lang,
-        updated_at: new Date().toISOString(),
+        updated_at: now,
       });
     }
 
@@ -127,7 +130,7 @@ async function insertLocationValues(locationId, placeDetails, attributeMapping) 
         attribute_id: attributeMapping.description,
         value_text: placeDetails[descKey],
         language_code: lang,
-        updated_at: new Date().toISOString(),
+        updated_at: now,
       });
     }
   }
