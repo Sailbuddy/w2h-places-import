@@ -64,4 +64,18 @@ async function main() {
       if (!result) continue;
 
       if (result.name) updates[`name_${lang}`] = result.name;
-      if (result.edito
+      if (result.editorial_summary?.overview) updates[`description_${lang}`] = result.editorial_summary.overview;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await updateLocation(placeId, updates);
+      console.log(`✅ Aktualisiert: ${placeId}`);
+    } else {
+      console.log(`➖ Keine Änderungen für: ${placeId}`);
+    }
+  }
+
+  console.log('🎉 Name + Beschreibung Import abgeschlossen.');
+}
+
+main().catch((err) => console.error('❌ Hauptfehler:', err));
