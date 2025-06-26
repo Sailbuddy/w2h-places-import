@@ -9,17 +9,25 @@ const supabaseKey = process.env.SUPABASE_KEY;
 const googleApiKey = process.env.GOOGLE_API_KEY;
 
 if (!supabaseUrl || !supabaseKey || !googleApiKey) {
-  throw new Error('SUPABASE_URL, SUPABASE_KEY und GOOGLE_API_KEY sind erforderlich.');
+  throw new Error('❌ SUPABASE_URL, SUPABASE_KEY und GOOGLE_API_KEY sind erforderlich.');
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
-
 const languages = ['de', 'en', 'fr', 'it', 'hr'];
 
 async function fetchGoogleData(placeId, language) {
-  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&language=${language}&key=${googleApiKey}`;
-  const response = await axios.get(url);
-  return response.data?.result;
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&language=${language}&fields=name,editorial_summary&key=${googleApiKey}`;
+  try {
+    const response = await axios.get(url);
+    if (response.data.status !== 'OK') {
+      console.warn(`⚠️ Google API-Fehler bei ${placeId} (${language}): ${response.data.status}`);
+      return null;
+    }
+    return response.data.result;
+  } catch (err) {
+    console.warn(`❌ Netzwerkfehler bei ${placeId} (${language}): ${err.message}`);
+    return null;
+  }
 }
 
 async function updateLocation(id, updates) {
@@ -29,39 +37,34 @@ async function updateLocation(id, updates) {
     .eq('id', id);
 
   if (error) {
-    console.error(`❌ Fehler beim Aktualisieren von ID ${id}:`, error.message);
+    console.error(`❌ Fehler beim Aktualisieren von Location ID ${id}: ${error.message}`);
   }
 }
 
 async function main() {
-  const { data, error } = await supabase
+  const { data: locations, error } = await supabase
     .from('locations')
     .select('id, google_place_id');
 
-  if (error) throw error;
+  if (error) throw new Error(`❌ Fehler beim Abruf der Locations: ${error.message}`);
 
-  for (const location of data) {
+  for (const location of locations) {
     const placeId = location.google_place_id;
     const updates = {};
 
     for (const lang of languages) {
-      try {
-        const result = await fetchGoogleData(placeId, lang);
-        if (!result) continue;
+      const result = await fetchGoogleData(placeId, lang);
+      if (!result) continue;
 
-        const nameField = `name_${lang}`;
-        const descriptionField = `description_${lang}`;
+      const nameField = `name_${lang}`;
+      const descField = `description_${lang}`;
 
-        if (result.name) {
-          updates[nameField] = result.name;
-        }
+      if (result.name) {
+        updates[nameField] = result.name;
+      }
 
-        if (result.editorial_summary?.overview) {
-          updates[descriptionField] = result.editorial_summary.overview;
-        }
-
-      } catch (err) {
-        console.warn(`⚠️ Fehler bei ${placeId} (${lang}): ${err.message}`);
+      if (result.editorial_summary?.overview) {
+        updates[descField] = result.editorial_summary.overview;
       }
     }
 
@@ -73,7 +76,7 @@ async function main() {
     }
   }
 
-  console.log('🎉 Fertig!');
+  console.log('🎉 Name + Beschreibung Import abgeschlossen.');
 }
 
 main().catch((err) => console.error('❌ Hauptfehler:', err));
