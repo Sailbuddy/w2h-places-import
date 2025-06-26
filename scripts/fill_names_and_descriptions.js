@@ -3,6 +3,7 @@
 import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
+import fs from 'fs';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
@@ -30,53 +31,37 @@ async function fetchGoogleData(placeId, language) {
   }
 }
 
-async function updateLocation(id, updates) {
+async function updateLocation(placeId, updates) {
   const { error } = await supabase
     .from('locations')
     .update(updates)
-    .eq('id', id);
+    .eq('google_place_id', placeId);
 
   if (error) {
-    console.error(`❌ Fehler beim Aktualisieren von Location ID ${id}: ${error.message}`);
+    console.error(`❌ Fehler beim Aktualisieren von ${placeId}: ${error.message}`);
   }
 }
 
 async function main() {
-  const { data: locations, error } = await supabase
-    .from('locations')
-    .select('id, google_place_id');
+  const jsonPath = process.argv[2] || 'data/place_ids_archive.json';
 
-  if (error) throw new Error(`❌ Fehler beim Abruf der Locations: ${error.message}`);
+  let rawData;
+  try {
+    const fileContent = fs.readFileSync(jsonPath, 'utf-8');
+    rawData = JSON.parse(fileContent);
+  } catch (err) {
+    console.error(`❌ Fehler beim Einlesen von ${jsonPath}: ${err.message}`);
+    return;
+  }
 
-  for (const location of locations) {
-    const placeId = location.google_place_id;
+  const placeIds = rawData.map(entry => typeof entry === 'string' ? entry : entry.placeId);
+
+  for (const placeId of placeIds) {
     const updates = {};
 
     for (const lang of languages) {
       const result = await fetchGoogleData(placeId, lang);
       if (!result) continue;
 
-      const nameField = `name_${lang}`;
-      const descField = `description_${lang}`;
-
-      if (result.name) {
-        updates[nameField] = result.name;
-      }
-
-      if (result.editorial_summary?.overview) {
-        updates[descField] = result.editorial_summary.overview;
-      }
-    }
-
-    if (Object.keys(updates).length > 0) {
-      await updateLocation(location.id, updates);
-      console.log(`✅ Aktualisiert: ${placeId}`);
-    } else {
-      console.log(`➖ Keine Änderungen für: ${placeId}`);
-    }
-  }
-
-  console.log('🎉 Name + Beschreibung Import abgeschlossen.');
-}
-
-main().catch((err) => console.error('❌ Hauptfehler:', err));
+      if (result.name) updates[`name_${lang}`] = result.name;
+      if (result.edito
