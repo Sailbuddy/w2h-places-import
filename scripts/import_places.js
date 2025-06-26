@@ -5,7 +5,6 @@ import fs from 'fs';
 dotenv.config();
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-
 const filepath = process.argv[2] || 'data/place_ids_archive.json';
 
 async function fetchGooglePlaceData(placeId, language) {
@@ -49,7 +48,6 @@ async function resolveCategoryId(googleTypes) {
 async function insertOrUpdateLocation(placeEntry, placeDetails) {
   const displayName = placeEntry.preferredName || placeDetails?.name || '(ohne Namen)';
   const categoryId = await resolveCategoryId(placeDetails?.types);
-
   const now = new Date().toISOString();
 
   const { data: existing, error: lookupError } = await supabase
@@ -86,14 +84,14 @@ async function insertOrUpdateLocation(placeEntry, placeDetails) {
 async function loadAttributeMapping() {
   const { data, error } = await supabase
     .from('attribute_definitions')
-    .select('id, key')
+    .select('attribute_id, key')
     .eq('is_active', true);
 
   if (error) throw new Error(`Fehler beim Laden des Attribut-Mappings: ${error.message}`);
 
   const mapping = {};
   data.forEach(attr => {
-    mapping[attr.key] = attr.id;
+    mapping[attr.key] = attr.attribute_id;
   });
   return mapping;
 }
