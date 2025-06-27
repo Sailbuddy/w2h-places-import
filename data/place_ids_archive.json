@@ -1,105 +1,5 @@
 [
-  {
-    "placeId": "ChIJfeDvheKod0cR-kYOxfypeWU",
-    "preferredName": "Nationalpark Hohe Tauern Mittersill"
-  },
-  {
-    "placeId": "ChIJNW2_iiXYdkcR7z5DxPsKTik",
-    "preferredName": "Hotel Alpenland 5600"
-  },
-  {
-    "placeId": "ChIJWyZ7-P4nd0cRAikvHeOHJso",
-    "preferredName": "Liechtensteinklamm 5600"
-  },
-  {
-    "placeId": "ChIJK01dK-t7e0cRBP319j2HZ8E",
-    "preferredName": "Leuchtturm Savudria"
-  },
-  {
-    "placeId": "ChIJj61dQgK6j4AR4GeTYWZsKWw",
-    "preferredName": "Googleplex Mountain View"
-  },
-  {
-    "placeId": "ChIJrUzB-my5fEcRH5bsJzJuaVs",
-    "preferredName": "Restaurant Viking Lim-Fjord"
-  },
-  {
-    "placeId": "ChIJ4Wspu-DSfEcRYraSNADrY9o",
-    "preferredName": "Kolloseum Pula"
-  },
-  {
-    "placeId": "ChIJf374PuDSfEcRyUXY-W_DbWM",
-    "preferredName": "street zero Pula"
-  },
-  {
-    "placeId": "ChIJSYmHOwCXfEcRHha2kDUl0oU",
-    "preferredName": "villa Romana Porec"
-  },
-  {
-    "placeId": "ChIJi492WvWbfEcR3Sy-tzZ9G-M",
-    "preferredName": "half 8 novigrad"
-  },
-  {
-    "placeId": "ChIJIxQrOk4nd0cR13Rki7qDaPU",
-    "preferredName": "seehof Goldegg"
-  },
-  {
-    "placeId": "ChIJ3bIjwSiPOIgRyLB9NHM_sm8",
-    "preferredName": "Cafe Galerie 5600"
-  },
-  {
-    "placeId": "ChIJWd8zYy_YdkcRqjn3RGBynZ4",
-    "preferredName": "Cafe Galerie St. Johann im Pongau"
-  },
-  {
-    "placeId": "ChIJY243ritOdkcRr_EQl_SD2Wo",
-    "preferredName": "Aufschnaiter St. Johann in Tirol"
-  },
-  {
-    "placeId": "ChIJbcoXUYcnd0cRN7bVK9eM6pU",
-    "preferredName": "Klinikum Schwarzach 5620 Schwarzach"
-  },
-  {
-    "placeId": "ChIJ8xtjzGwnd0cRV_ukCyrj5Zw",
-    "preferredName": "Glas Metall Weissofner Schwarzach"
-  },
-  {
-    "placeId": "ChIJAQBARAvYdkcR-jWUav_DkQM",
-    "preferredName": "Kia Pongau 5621 St. Veit"
-  },
-  {
-    "placeId": "ChIJiTuA91End0cRKWF-I0l7V3Y",
-    "preferredName": "hotel am Schloss 5622 Goldegg"
-  },
-  {
-    "placeId": "ChIJz3L_R04nd0cRnOWxH9gXRlA",
-    "preferredName": "Hotel Post 5622 Goldegg"
-  },
-  {
-    "placeId": "ChIJvYVexFEnd0cRBKO6_vLfUzo",
-    "preferredName": "Schloss Goldegg 5622 Goldegg"
-  },
-  {
-    "placeId": "ChIJg498YAHYdkcR1AudLl779yo",
-    "preferredName": "Hotel Berghof 5600 St. Johann im Pongau"
-  },
-  {
-    "placeId": "ChIJdYDQ2DLYdkcRhYxc6IAtsBw",
-    "preferredName": "hochenburger 5600 St. Johann im Pongau"
-  },
-  {
-    "placeId": "ChIJ-e7dzTLYdkcROnXHii1BN24",
-    "preferredName": "vierthaler 5600 St. Johann im Pongau"
-  },
-  {
-    "placeId": "ChIJs1K6XUPadkcR0HzqaQGUia8",
-    "preferredName": "vierthaler 5500 Bischofshofen"
-  },
-  {
-    "placeId": "ChIJ715FHxfYdkcRe8XcBs01ccM",
-    "preferredName": "ÖFAG 5600"
-  },
-  {
+    {
     "placeId": "ChIJ8aGpZXUHbUcR7RhDMQpSArs",
     "preferredName": "Plachutta Wollzeile, Wien"
   },
@@ -109,6 +9,6 @@
   },
   {
     "placeId": "ChIJv3zAHAmobUcRyYvq5F26aU4",
-    "preferredName": "Schloss Sch�nbrunn"
+    "preferredName": "Schloss Schönbrunn"
   }
 ]
