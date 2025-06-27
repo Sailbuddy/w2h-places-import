@@ -29,6 +29,12 @@ function loadPlaceIdsFromFile(path) {
   }
 }
 
+function getTodayGroup() {
+  const days = ["sonntag", "montag", "dienstag", "mittwoch", "donnerstag", "freitag", "samstag"];
+  const today = new Date().getDay();
+  return days[today];
+}
+
 async function translateWithOpenAI(text, targetLang) {
   try {
     const response = await axios.post(
@@ -87,18 +93,22 @@ async function enrichLocationValues() {
     return;
   }
 
-  const { data: attributes, error: attrError } = await supabase.from("attribute_definitions").select("*");
+  const { data: allAttributes, error: attrError } = await supabase
+    .from("attribute_definitions")
+    .select("*");
   if (attrError) {
     console.error("❌ Fehler beim Laden der Attribute:", attrError.message);
     return;
   }
+
+  const groupForToday = getTodayGroup();
 
   for (const entry of placeEntries) {
     const placeId = entry.placeId;
 
     const { data: location, error: locError } = await supabase
       .from("locations")
-      .select("id, display_name")
+      .select("id, display_name, category_id")
       .eq("google_place_id", placeId)
       .maybeSingle();
 
@@ -110,10 +120,14 @@ async function enrichLocationValues() {
     console.log(`📍 Bearbeite: ${location.display_name}`);
     const baseDetails = await getPlaceDetails(placeId, "en");
 
+    const attributes = allAttributes.filter(attr =>
+      (!attr.category_id || attr.category_id === location.category_id) &&
+      (attr.update_frequency === "täglich" || attr.update_frequency === groupForToday)
+    );
+
     for (const attr of attributes) {
       let rawValue = null;
 
-      // 🖼 Spezialfall: Bilder
       if (attr.key.startsWith("photo_")) {
         const index = parseInt(attr.key.split("_")[1], 10) - 1;
         const photo = baseDetails.photos?.[index];
