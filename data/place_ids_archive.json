@@ -1,5 +1,5 @@
 [
-    {
+  {
     "placeId": "ChIJ8aGpZXUHbUcR7RhDMQpSArs",
     "preferredName": "Plachutta Wollzeile, Wien"
   },
@@ -10,5 +10,9 @@
   {
     "placeId": "ChIJv3zAHAmobUcRyYvq5F26aU4",
     "preferredName": "Schloss Schönbrunn"
+  },
+  {
+    "placeId": "ChIJUQOxEDHYdkcRsQEwXPz7oGw",
+    "preferredName": "Jet Tankstelle 5600 St. Johann im Pongau"
   }
 ]
