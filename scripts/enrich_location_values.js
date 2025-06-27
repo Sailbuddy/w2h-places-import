@@ -27,12 +27,6 @@ function loadPlaceIdsFromFile(path) {
   }
 }
 
-function getTodayGroup() {
-  const days = ["sonntag", "montag", "dienstag", "mittwoch", "donnerstag", "freitag", "samstag"];
-  const today = new Date().getDay();
-  return days[today];
-}
-
 async function translateWithOpenAI(text, targetLang) {
   try {
     const response = await axios.post(
@@ -94,8 +88,6 @@ async function enrichLocationValues() {
     return;
   }
 
-  const groupForToday = getTodayGroup();
-
   for (const entry of placeEntries) {
     const placeId = entry.placeId;
 
@@ -116,13 +108,15 @@ async function enrichLocationValues() {
     const baseDetails = await getPlaceDetails(placeId, "en");
 
     const attributes = allAttributes.filter(attr =>
-      (!attr.category_id || Number(attr.category_id) === locationCat) &&
-      ["täglich", groupForToday].includes(attr.update_frequency)
+      !attr.category_id || Number(attr.category_id) === locationCat
     );
 
-    console.log(`🔎 Gefilterte Attribute für ${location.display_name} (${groupForToday}): ${attributes.length}`);
+    console.log(`🔎 Gefilterte Attribute (nur Kategorie): ${attributes.length}`);
 
-    if (attributes.length === 0) continue;
+    if (attributes.length === 0) {
+      console.warn("⚠️ Keine passenden Attribute für diese Kategorie.");
+      continue;
+    }
 
     for (const attr of attributes) {
       let rawValue = null;
@@ -194,7 +188,7 @@ async function enrichLocationValues() {
     }
   }
 
-  console.log("🎉 Attribut-Erweiterung abgeschlossen.");
+  console.log("🎉 Vereinfachte Attribut-Erweiterung abgeschlossen.");
 }
 
 enrichLocationValues();
