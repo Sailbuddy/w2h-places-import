@@ -1,31 +1,16 @@
+// scripts/enrich_location_values.js
+
 require("dotenv").config();
 const { createClient } = require("@supabase/supabase-js");
 const axios = require("axios");
-const fs = require("fs");
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const SUPABASE_KEY = process.env.SUPABASE_KEY; // ✔ angepasst
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY); // ✔ angepasst
 const LANGUAGES = ["de", "en", "it", "fr", "hr"];
-const filepath = process.argv[2] || "data/place_ids.json";
-
-function loadPlaceIdsFromFile(path) {
-  try {
-    const raw = fs.readFileSync(path, "utf-8");
-    const json = JSON.parse(raw);
-    return json.map((entry) =>
-      typeof entry === "string"
-        ? { placeId: entry, preferredName: null }
-        : { placeId: entry.placeId, preferredName: entry.preferredName || null }
-    );
-  } catch (err) {
-    console.error(`❌ Fehler beim Lesen der Datei ${path}:`, err.message);
-    return [];
-  }
-}
 
 async function translateWithOpenAI(text, targetLang) {
   try {
@@ -36,16 +21,19 @@ async function translateWithOpenAI(text, targetLang) {
         messages: [
           {
             role: "system",
-            content: `Übersetze folgenden Text ins ${targetLang}. Gib nur den übersetzten Text zurück.`,
+            content: `Übersetze folgenden Text ins ${targetLang}. Gib nur den übersetzten Text zurück.`
           },
-          { role: "user", content: text }
-        ],
+          {
+            role: "user",
+            content: text
+          }
+        ]
       },
       {
         headers: {
           Authorization: `Bearer ${OPENAI_API_KEY}`,
-          "Content-Type": "application/json",
-        },
+          "Content-Type": "application/json"
+        }
       }
     );
     return response.data.choices[0].message.content.trim();
@@ -76,59 +64,38 @@ function getValueFromDetails(details, keyPath) {
 }
 
 async function enrichLocationValues() {
-  const placeEntries = loadPlaceIdsFromFile(filepath);
-  if (placeEntries.length === 0) {
-    console.warn("⚠️ Keine gültigen Place IDs gefunden.");
+  const { data: locations, error: locError } = await supabase.from("locations").select("*");
+  if (locError) {
+    console.error("❌ Fehler beim Laden der Locations:", locError.message);
     return;
   }
 
-  const { data: allAttributes, error: attrError } = await supabase.from("attribute_definitions").select("*");
+  const { data: attributes, error: attrError } = await supabase.from("attribute_definitions").select("*");
   if (attrError) {
     console.error("❌ Fehler beim Laden der Attribute:", attrError.message);
     return;
   }
 
-  for (const entry of placeEntries) {
-    const placeId = entry.placeId;
+  for (const location of locations) {
+    const placeId = location.google_place_id;
+    if (!placeId) continue;
 
-    const { data: location, error: locError } = await supabase
-      .from("locations")
-      .select("id, display_name, category_id")
-      .eq("google_place_id", placeId)
-      .maybeSingle();
-
-    if (locError || !location) {
-      console.warn(`⚠️ Keine Location gefunden für ${placeId}`);
-      continue;
-    }
-
-    const locationCat = Number(location.category_id);
-    console.log(`📍 Bearbeite: ${location.display_name} (Kategorie-ID: ${locationCat})`);
-
+    console.log(`📍 Bearbeite: ${location.display_name}`);
     const baseDetails = await getPlaceDetails(placeId, "en");
-
-    const attributes = allAttributes.filter(attr =>
-      !attr.category_id || Number(attr.category_id) === locationCat
-    );
-
-    console.log(`🔎 Gefilterte Attribute (nur Kategorie): ${attributes.length}`);
-
-    if (attributes.length === 0) {
-      console.warn("⚠️ Keine passenden Attribute für diese Kategorie.");
-      continue;
-    }
 
     for (const attr of attributes) {
       let rawValue = null;
 
+      // 🖼 Spezialfall: Bilder
       if (attr.key.startsWith("photo_")) {
         const index = parseInt(attr.key.split("_")[1], 10) - 1;
         const photo = baseDetails.photos?.[index];
         if (!photo) continue;
+
         rawValue = {
           photo_reference: photo.photo_reference,
           width: photo.width,
-          height: photo.height,
+          height: photo.height
         };
       } else {
         rawValue = getValueFromDetails(baseDetails, attr.key);
@@ -148,9 +115,10 @@ async function enrichLocationValues() {
           location_id: location.id,
           attribute_id: attr.attribute_id,
           language_code: lang,
-          updated_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         };
 
+        // ⬇️ Typzuweisung
         if (attr.key.startsWith("photo_")) {
           insertData.value_json = rawValue;
         } else {
@@ -176,7 +144,7 @@ async function enrichLocationValues() {
         }
 
         const { error } = await supabase.from("location_values").upsert(insertData, {
-          onConflict: "location_id,attribute_id,language_code",
+          onConflict: "location_id,attribute_id,language_code"
         });
 
         if (error) {
@@ -187,8 +155,6 @@ async function enrichLocationValues() {
       }
     }
   }
-
-  console.log("🎉 Vereinfachte Attribut-Erweiterung abgeschlossen.");
 }
 
 enrichLocationValues();
