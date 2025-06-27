@@ -7,9 +7,22 @@ dotenv.config();
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 const filepath = process.argv[2] || 'data/place_ids_archive.json';
 
-async function fetchGooglePlaceData(placeId, language) {
+function getActiveUpdateLevels() {
+  const today = new Date();
+  const weekday = today.getDay();      // 0 = Sonntag
+  const dayOfMonth = today.getDate();  // 1–31
+  const levels = [1]; // täglich immer
+
+  if (weekday === 0) levels.push(2);   // wöchentlich (Sonntag)
+  if (dayOfMonth === 1) levels.push(3); // monatlich (1. des Monats)
+
+  return levels;
+}
+
+async function fetchGooglePlaceData(placeId, language, allowedKeys) {
   const apiKey = process.env.GOOGLE_API_KEY;
-  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=name,formatted_address,website,url,types,opening_hours,formatted_phone_number,rating,price_level,geometry,plus_code&language=${language}&key=${apiKey}`;
+  const fields = allowedKeys.join(',');
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=${fields}&language=${language}&key=${apiKey}`;
 
   try {
     const response = await fetch(url);
@@ -150,21 +163,36 @@ function loadPlaceIdsFromFile(filepath) {
 async function processPlaces() {
   console.log(`📦 Starte Import von Datei: ${filepath}`);
   const placeEntries = loadPlaceIdsFromFile(filepath);
-
   if (placeEntries.length === 0) {
     console.warn('⚠️ Keine gültigen Einträge gefunden – Abbruch');
     return;
   }
 
+  const activeLevels = getActiveUpdateLevels();
+
+  const { data: activeAttributes, error: attrError } = await supabase
+    .from('attribute_definitions')
+    .select('key, update_frequency')
+    .eq('is_active', true);
+
+  if (attrError) throw new Error(`❌ Fehler beim Laden der Attributdefinitionen: ${attrError.message}`);
+
+  const allowedKeys = activeAttributes
+    .filter(attr => activeLevels.includes(attr.update_frequency))
+    .map(attr => attr.key);
+
+  console.log(`🔎 Erlaube Felder für heute (${new Date().toISOString()}):`);
+  console.log(allowedKeys.join(', '));
+
   const attributeMapping = await loadAttributeMapping();
 
   for (const placeEntry of placeEntries) {
     try {
-      const detailsDe = await fetchGooglePlaceData(placeEntry.placeId, 'de');
-      const detailsEn = await fetchGooglePlaceData(placeEntry.placeId, 'en');
-      const detailsIt = await fetchGooglePlaceData(placeEntry.placeId, 'it');
-      const detailsHr = await fetchGooglePlaceData(placeEntry.placeId, 'hr');
-      const detailsFr = await fetchGooglePlaceData(placeEntry.placeId, 'fr');
+      const detailsDe = await fetchGooglePlaceData(placeEntry.placeId, 'de', allowedKeys);
+      const detailsEn = await fetchGooglePlaceData(placeEntry.placeId, 'en', allowedKeys);
+      const detailsIt = await fetchGooglePlaceData(placeEntry.placeId, 'it', allowedKeys);
+      const detailsHr = await fetchGooglePlaceData(placeEntry.placeId, 'hr', allowedKeys);
+      const detailsFr = await fetchGooglePlaceData(placeEntry.placeId, 'fr', allowedKeys);
 
       const location = await insertOrUpdateLocation(placeEntry, detailsDe);
 
