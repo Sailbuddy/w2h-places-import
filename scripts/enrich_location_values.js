@@ -125,6 +125,9 @@ async function enrichLocationValues() {
       (attr.update_frequency === "täglich" || attr.update_frequency === groupForToday)
     );
 
+    // 👉 Kontrollausgabe Anzahl gefilterter Attribute
+    console.log(`🔎 Gefilterte Attribute für ${location.display_name} (${groupForToday}): ${attributes.length}`);
+
     for (const attr of attributes) {
       let rawValue = null;
 
