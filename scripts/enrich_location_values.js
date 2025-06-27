@@ -1,5 +1,3 @@
-// scripts/enrich_location_values.js
-
 require("dotenv").config();
 const { createClient } = require("@supabase/supabase-js");
 const axios = require("axios");
@@ -46,10 +44,7 @@ async function translateWithOpenAI(text, targetLang) {
             role: "system",
             content: `Übersetze folgenden Text ins ${targetLang}. Gib nur den übersetzten Text zurück.`,
           },
-          {
-            role: "user",
-            content: text,
-          },
+          { role: "user", content: text }
         ],
       },
       {
@@ -93,9 +88,7 @@ async function enrichLocationValues() {
     return;
   }
 
-  const { data: allAttributes, error: attrError } = await supabase
-    .from("attribute_definitions")
-    .select("*");
+  const { data: allAttributes, error: attrError } = await supabase.from("attribute_definitions").select("*");
   if (attrError) {
     console.error("❌ Fehler beim Laden der Attribute:", attrError.message);
     return;
@@ -117,16 +110,19 @@ async function enrichLocationValues() {
       continue;
     }
 
-    console.log(`📍 Bearbeite: ${location.display_name}`);
+    const locationCat = Number(location.category_id);
+    console.log(`📍 Bearbeite: ${location.display_name} (Kategorie-ID: ${locationCat})`);
+
     const baseDetails = await getPlaceDetails(placeId, "en");
 
     const attributes = allAttributes.filter(attr =>
-      (!attr.category_id || attr.category_id === location.category_id) &&
-      (attr.update_frequency === "täglich" || attr.update_frequency === groupForToday)
+      (!attr.category_id || Number(attr.category_id) === locationCat) &&
+      ["täglich", groupForToday].includes(attr.update_frequency)
     );
 
-    // 👉 Kontrollausgabe Anzahl gefilterter Attribute
     console.log(`🔎 Gefilterte Attribute für ${location.display_name} (${groupForToday}): ${attributes.length}`);
+
+    if (attributes.length === 0) continue;
 
     for (const attr of attributes) {
       let rawValue = null;
@@ -135,7 +131,6 @@ async function enrichLocationValues() {
         const index = parseInt(attr.key.split("_")[1], 10) - 1;
         const photo = baseDetails.photos?.[index];
         if (!photo) continue;
-
         rawValue = {
           photo_reference: photo.photo_reference,
           width: photo.width,
