@@ -27,6 +27,9 @@ jobs:
       - name: 📦 Install Dependencies
         run: npm install axios dotenv @supabase/supabase-js node-fetch
 
+      - name: 🍽️ Vorbereitung: Attribut-Zuordnung zu Kategorien
+        run: node scripts/prepare_attribute_category_links.js data/place_ids_archive.json
+
       - name: ✳️ Auto-Erweiterung Attributliste (aus Google API)
         run: node scripts/import_attribute_definitions.js data/place_ids_archive.json
 
