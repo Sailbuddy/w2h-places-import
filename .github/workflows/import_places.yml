@@ -1,9 +1,9 @@
-name: "Import Google Places mit Attribut-Scan"
+name: Import Google Places mit Attribut-Scan
 
 on:
   schedule:
     - cron: '0 2 * * *'  # täglicher Lauf um 02:00 UTC
-  workflow_dispatch:      # manuelles Auslösen möglich
+  workflow_dispatch:
 
 jobs:
   import:
@@ -16,31 +16,31 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
     steps:
-      - name: "Checkout Repository"
+      - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: "Setup Node.js"
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      - name: "Install Dependencies"
+      - name: Install Dependencies
         run: npm install axios dotenv @supabase/supabase-js node-fetch
 
-      - name: "Vorbereitung: Attribut-Zuordnung zu Kategorien"
+      - name: Vorbereitung: Attribut-Zuordnung zu Kategorien
         run: node scripts/prepare_attribute_category_links.js data/place_ids_archive.json
 
-      - name: "Auto-Erweiterung Attributliste + Mapping zu Kategorien"
+      - name: Auto-Erweiterung Attributliste (aus Google API)
         run: node scripts/import_attribute_definitions.js data/place_ids_archive.json
 
-      - name: "Automatischer Kategorien-Sync inkl. Übersetzung"
+      - name: Kategorien-Sync inkl. Übersetzung (KI)
         run: node scripts/fetch_categories.js data/place_ids_archive.json
 
-      - name: "Import Locations & Attributwerte"
+      - name: Import Locations & Attributwerte
         run: node scripts/import_places.js data/place_ids_archive.json
 
-      - name: "Name + Beschreibung einfügen (mehrsprachig)"
+      - name: Name + Beschreibung einfügen (mehrsprachig)
         run: node scripts/fill_names_and_descriptions.js data/place_ids_archive.json
 
-      - name: "Attributwerte mehrsprachig & strukturiert einfügen"
-        run: node scripts/enrich_location_values.js data/place_ids_archive.json
+      - name: Attributwerte mehrsprachig & strukturiert einfügen (ohne Reviews)
+        run: node scripts/enrich_location_values.js data/place_ids_archive.json skip_reviews
