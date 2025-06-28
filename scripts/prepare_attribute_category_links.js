@@ -1,3 +1,5 @@
+// scripts/prepare_attribute_category_links.js
+
 import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import dotenv from 'dotenv';
@@ -30,7 +32,7 @@ async function findCategoryIdByGoogleType(googleType) {
   const { data, error } = await supabase
     .from('categories')
     .select('id, google_cat_id')
-    .ilike('google_cat_id', googleType); // case-insensitive Vergleich
+    .ilike('google_cat_id', googleType);
 
   if (error) {
     console.error(`❌ Fehler bei categories-Suche: ${error.message}`);
@@ -41,7 +43,7 @@ async function findCategoryIdByGoogleType(googleType) {
 }
 
 async function run() {
-  console.log(`📥 Starte Attribut-Zuordnung für Datei: ${inputPath}`);
+  console.log(`📥 Starte Kategorie-Mapping aus Datei: ${inputPath}`);
   let placeIds = [];
 
   try {
@@ -53,14 +55,7 @@ async function run() {
     return;
   }
 
-  const { data: attributes, error: attrErr } = await supabase
-    .from('attribute_definitions')
-    .select('attribute_id');
-
-  if (attrErr || !attributes) {
-    console.error(`❌ Fehler beim Laden der Attributliste: ${attrErr?.message}`);
-    return;
-  }
+  const output = [];
 
   for (const placeId of placeIds) {
     const googleType = await fetchGoogleType(placeId);
@@ -71,43 +66,22 @@ async function run() {
 
     const category_id = await findCategoryIdByGoogleType(googleType);
     if (!category_id) {
-      console.warn(`⚠️ Kein Match in categories für Google-Typ "${googleType}" – ${placeId} übersprungen.`);
+      console.warn(`⚠️ Kein Match in categories für Typ "${googleType}" – ${placeId} übersprungen.`);
       continue;
     }
 
-    const { data: existingLinks, error: linkErr } = await supabase
-      .from('attributes_meet_categories')
-      .select('attribute_id, category_id')
-      .eq('category_id', category_id);
-
-    if (linkErr) {
-      console.error(`❌ Fehler beim Lesen vorhandener Links: ${linkErr.message}`);
-      continue;
-    }
-
-    const existingSet = new Set(existingLinks.map(l => `${l.attribute_id}_${l.category_id}`));
-
-    const newLinks = attributes
-      .map(a => ({ attribute_id: a.attribute_id, category_id }))
-      .filter(link => !existingSet.has(`${link.attribute_id}_${link.category_id}`));
-
-    if (newLinks.length === 0) {
-      console.log(`🟡 Keine neuen Zuordnungen nötig für ${placeId} (${googleType} → Kategorie ${category_id})`);
-      continue;
-    }
-
-    const { error: insertErr } = await supabase
-      .from('attributes_meet_categories')
-      .insert(newLinks);
-
-    if (insertErr) {
-      console.error(`❌ Fehler beim Schreiben für ${placeId}: ${insertErr.message}`);
-    } else {
-      console.log(`🔗 ${newLinks.length} neue Links gespeichert für ${placeId} (${googleType} → Kategorie ${category_id})`);
-    }
+    output.push({ place_id: placeId, category_id });
+    console.log(`✅ ${placeId} → ${googleType} → Kategorie ${category_id}`);
   }
 
-  console.log('\n✅ Attribut-Zuordnung abgeschlossen!');
+  try {
+    fs.writeFileSync('data/place_categories.json', JSON.stringify(output, null, 2));
+    console.log('\n📝 Mapping gespeichert unter: data/place_categories.json');
+  } catch (writeErr) {
+    console.error(`❌ Fehler beim Speichern der Mapping-Datei: ${writeErr.message}`);
+  }
+
+  console.log('\n✅ Vorbereitung abgeschlossen!');
 }
 
 run();
