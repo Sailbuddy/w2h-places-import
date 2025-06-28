@@ -1,4 +1,4 @@
-// scripts/enrich_location_values.js
+// scripts/enrich_location_values.js (gefilterte Version)
 
 require("dotenv").config();
 const { createClient } = require("@supabase/supabase-js");
@@ -87,9 +87,11 @@ async function enrichLocationValues() {
     return;
   }
 
-  const { data: attributes, error: attrError } = await supabase.from("attribute_definitions").select("*");
+  const { data: allAttributes, error: attrError } = await supabase
+    .from("attribute_definitions")
+    .select("*");
   if (attrError) {
-    console.error("❌ Fehler beim Laden der Attribute:", attrError.message);
+    console.error("❌ Fehler beim Laden der Attributdefinitionen:", attrError.message);
     return;
   }
 
@@ -108,12 +110,27 @@ async function enrichLocationValues() {
     }
 
     console.log(`📍 Bearbeite: ${location.display_name}`);
+
+    const { data: linkedAttributes, error: linkError } = await supabase
+      .from("attributes_meet_categories")
+      .select("attribute_id")
+      .eq("place_id", placeId);
+
+    if (linkError || !linkedAttributes) {
+      console.warn(`⚠️ Keine verknüpften Attribute für ${placeId} gefunden.`);
+      continue;
+    }
+
+    const validAttributeIds = new Set(linkedAttributes.map((a) => a.attribute_id));
+    const filteredAttributes = allAttributes.filter((a) =>
+      validAttributeIds.has(a.attribute_id)
+    );
+
     const baseDetails = await getPlaceDetails(placeId, "en");
 
-    for (const attr of attributes) {
+    for (const attr of filteredAttributes) {
       let rawValue = null;
 
-      // 🖼 Spezialfall: Bilder
       if (attr.key.startsWith("photo_")) {
         const index = parseInt(attr.key.split("_")[1], 10) - 1;
         const photo = baseDetails.photos?.[index];
@@ -182,7 +199,7 @@ async function enrichLocationValues() {
     }
   }
 
-  console.log("🎉 Attribut-Erweiterung abgeschlossen.");
+  console.log("🎉 Gefilterte Attribut-Erweiterung abgeschlossen.");
 }
 
 enrichLocationValues();
