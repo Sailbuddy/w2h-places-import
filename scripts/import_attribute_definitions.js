@@ -79,9 +79,9 @@ async function attributeExists(key) {
 }
 
 // --- Attribut einfügen ---
-async function insertAttributeDefinition(key, input_type) {
+async function insertAttributeDefinition(key, input_type, category_id) {
   const { error } = await supabase.from('attribute_definitions').insert({
-    category_id: 1,
+    category_id,
     key,
     name_de: key,
     description_de: '',
@@ -92,7 +92,19 @@ async function insertAttributeDefinition(key, input_type) {
   if (error) {
     console.error(`❌ Fehler bei Insert ${key}: ${error.message}`);
   } else {
-    console.log(`✅ Neues Attribut: ${key} (${input_type})`);
+    console.log(`✅ Neues Attribut: ${key} (${input_type}) für Kategorie ${category_id}`);
+  }
+}
+
+// --- Kategorie-Mapping laden ---
+function loadCategoryMap(path = 'data/place_categories.json') {
+  try {
+    const raw = fs.readFileSync(path, 'utf-8');
+    const array = JSON.parse(raw);
+    return Object.fromEntries(array.map(entry => [entry.place_id, entry.category_id]));
+  } catch (err) {
+    console.error(`❌ Fehler beim Laden von place_categories.json: ${err.message}`);
+    return {};
   }
 }
 
@@ -114,9 +126,16 @@ async function scanAttributesFromJsonFile(jsonPath = 'data/place_ids_archive.jso
     return;
   }
 
+  const categoryMap = loadCategoryMap('data/place_categories.json');
   const placeIds = rawData.map(entry => typeof entry === 'string' ? entry : entry.placeId);
 
   for (const placeId of placeIds) {
+    const category_id = categoryMap[placeId];
+    if (!category_id) {
+      console.warn(`⚠️ Keine Kategorie für ${placeId} – Attributzuordnung übersprungen.`);
+      continue;
+    }
+
     try {
       const details = await fetchGooglePlaceData(placeId);
       const keys = extractKeys(details);
@@ -125,7 +144,7 @@ async function scanAttributesFromJsonFile(jsonPath = 'data/place_ids_archive.jso
         const exists = await attributeExists(key);
         if (!exists) {
           const type = determineType(details, key);
-          await insertAttributeDefinition(key, type);
+          await insertAttributeDefinition(key, type, category_id);
         }
       }
 
