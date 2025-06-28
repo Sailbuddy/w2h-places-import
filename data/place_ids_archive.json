@@ -9,7 +9,7 @@
   },
   {
     "placeId": "ChIJv3zAHAmobUcRyYvq5F26aU4",
-    "preferredName": "Schloss SchÃƒÂ¶nbrunn"
+    "preferredName": "Schloss SchÃƒÆ’Ã‚Â¶nbrunn"
   },
   {
     "placeId": "ChIJUQOxEDHYdkcRsQEwXPz7oGw",
@@ -37,7 +37,7 @@
   },
   {
     "placeId": "ChIJb0GapDyobUcR4o6tTtu0uWg",
-    "preferredName": "Adlmanninger AltmÃ¼nster"
+    "preferredName": "Adlmanninger AltmÃƒÂ¼nster"
   },
   {
     "placeId": "ChIJg6ffaC_YdkcRWhfcOamtyHI",
@@ -49,10 +49,14 @@
   },
   {
     "placeId": "ChIJh9WBVnFNdkcRoRgIVo9YeXA",
-    "preferredName": "KitzSki Kitzbühel"
+    "preferredName": "KitzSki KitzbÃ¼hel"
   },
   {
     "placeId": "ChIJHVE1QDxTdkcRh27H7hWwztQ",
-    "preferredName": "gasthaus eichenheim kitzb�hel"
+    "preferredName": "gasthaus eichenheim kitzbühel"
+  },
+  {
+    "placeId": "ChIJlVftuP_XdkcRN6LeBP5cTe4",
+    "preferredName": "Gut Berg Naturhotel"
   }
 ]
