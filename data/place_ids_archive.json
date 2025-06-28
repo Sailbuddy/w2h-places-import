@@ -9,7 +9,7 @@
   },
   {
     "placeId": "ChIJv3zAHAmobUcRyYvq5F26aU4",
-    "preferredName": "Schloss SchÃ¶nbrunn"
+    "preferredName": "Schloss SchÃƒÂ¶nbrunn"
   },
   {
     "placeId": "ChIJUQOxEDHYdkcRsQEwXPz7oGw",
@@ -37,7 +37,7 @@
   },
   {
     "placeId": "ChIJb0GapDyobUcR4o6tTtu0uWg",
-    "preferredName": "Adlmanninger Altmünster"
+    "preferredName": "Adlmanninger AltmÃ¼nster"
   },
   {
     "placeId": "ChIJg6ffaC_YdkcRWhfcOamtyHI",
@@ -49,6 +49,10 @@
   },
   {
     "placeId": "ChIJh9WBVnFNdkcRoRgIVo9YeXA",
-    "preferredName": "KitzSki Kitzb�hel"
+    "preferredName": "KitzSki Kitzbühel"
+  },
+  {
+    "placeId": "ChIJHVE1QDxTdkcRh27H7hWwztQ",
+    "preferredName": "gasthaus eichenheim kitzb�hel"
   }
 ]
