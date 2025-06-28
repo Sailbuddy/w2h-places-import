@@ -1,17 +1,44 @@
-// scripts/prepare_attribute_category_links.js
-
 import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import dotenv from 'dotenv';
+import fetch from 'node-fetch';
 
 dotenv.config();
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY // angepasst für GitHub Actions
+  process.env.SUPABASE_KEY
 );
 
 const inputPath = process.argv[2] || 'data/place_ids_archive.json';
+
+async function fetchGoogleType(placeId) {
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=types&key=${process.env.GOOGLE_API_KEY}`;
+  const res = await fetch(url);
+  const data = await res.json();
+
+  if (data.status !== 'OK') {
+    console.warn(`⚠️ Google API Fehler für ${placeId}: ${data.status}`);
+    return null;
+  }
+
+  const types = data.result.types;
+  return Array.isArray(types) && types.length > 0 ? types[0].toLowerCase() : null;
+}
+
+async function findCategoryIdByGoogleType(googleType) {
+  const { data, error } = await supabase
+    .from('categories')
+    .select('id, google_cat_id')
+    .ilike('google_cat_id', googleType); // case-insensitive Vergleich
+
+  if (error) {
+    console.error(`❌ Fehler bei categories-Suche: ${error.message}`);
+    return null;
+  }
+
+  return data?.[0]?.id || null;
+}
 
 async function run() {
   console.log(`📥 Starte Attribut-Zuordnung für Datei: ${inputPath}`);
@@ -36,18 +63,17 @@ async function run() {
   }
 
   for (const placeId of placeIds) {
-    const { data: loc, error: locErr } = await supabase
-      .from('locations')
-      .select('category_id')
-      .eq('google_place_id', placeId)
-      .single();
-
-    if (locErr || !loc?.category_id) {
-      console.warn(`⚠️ Keine gültige Kategorie für ${placeId} gefunden – übersprungen.`);
+    const googleType = await fetchGoogleType(placeId);
+    if (!googleType) {
+      console.warn(`⚠️ Kein gültiger Google-Typ für ${placeId} – übersprungen.`);
       continue;
     }
 
-    const category_id = loc.category_id;
+    const category_id = await findCategoryIdByGoogleType(googleType);
+    if (!category_id) {
+      console.warn(`⚠️ Kein Match in categories für Google-Typ "${googleType}" – ${placeId} übersprungen.`);
+      continue;
+    }
 
     const { data: existingLinks, error: linkErr } = await supabase
       .from('attributes_meet_categories')
@@ -66,7 +92,7 @@ async function run() {
       .filter(link => !existingSet.has(`${link.attribute_id}_${link.category_id}`));
 
     if (newLinks.length === 0) {
-      console.log(`🟡 Keine neuen Zuordnungen nötig für ${placeId} (Kategorie ${category_id})`);
+      console.log(`🟡 Keine neuen Zuordnungen nötig für ${placeId} (${googleType} → Kategorie ${category_id})`);
       continue;
     }
 
@@ -75,9 +101,9 @@ async function run() {
       .insert(newLinks);
 
     if (insertErr) {
-      console.error(`❌ Fehler beim Speichern für ${placeId}: ${insertErr.message}`);
+      console.error(`❌ Fehler beim Schreiben für ${placeId}: ${insertErr.message}`);
     } else {
-      console.log(`🔗 ${newLinks.length} neue Links gespeichert für ${placeId} (Kategorie ${category_id})`);
+      console.log(`🔗 ${newLinks.length} neue Links gespeichert für ${placeId} (${googleType} → Kategorie ${category_id})`);
     }
   }
 
