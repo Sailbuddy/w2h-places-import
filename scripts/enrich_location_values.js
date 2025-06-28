@@ -1,5 +1,3 @@
-// scripts/enrich_location_values.js (gefilterte Version)
-
 require("dotenv").config();
 const { createClient } = require("@supabase/supabase-js");
 const axios = require("axios");
@@ -9,6 +7,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const INCLUDE_REVIEWS = process.env.INCLUDE_REVIEWS === "true"; // 👈 Steuerung per YML
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 const LANGUAGES = ["de", "en", "it", "fr", "hr"];
@@ -90,8 +89,9 @@ async function enrichLocationValues() {
   const { data: allAttributes, error: attrError } = await supabase
     .from("attribute_definitions")
     .select("*");
+
   if (attrError) {
-    console.error("❌ Fehler beim Laden der Attributdefinitionen:", attrError.message);
+    console.error("❌ Fehler beim Laden der Attribute:", attrError.message);
     return;
   }
 
@@ -110,23 +110,23 @@ async function enrichLocationValues() {
     }
 
     console.log(`📍 Bearbeite: ${location.display_name}`);
+    const baseDetails = await getPlaceDetails(placeId, "en");
 
-    const { data: linkedAttributes, error: linkError } = await supabase
+    const { data: attributeLinks, error: linkError } = await supabase
       .from("attributes_meet_categories")
       .select("attribute_id")
       .eq("place_id", placeId);
 
-    if (linkError || !linkedAttributes) {
-      console.warn(`⚠️ Keine verknüpften Attribute für ${placeId} gefunden.`);
+    if (linkError) {
+      console.error(`❌ Fehler beim Laden der Attribute-Links für ${placeId}:`, linkError.message);
       continue;
     }
 
-    const validAttributeIds = new Set(linkedAttributes.map((a) => a.attribute_id));
-    const filteredAttributes = allAttributes.filter((a) =>
-      validAttributeIds.has(a.attribute_id)
-    );
+    const validAttributeIds = new Set(attributeLinks.map((a) => a.attribute_id));
 
-    const baseDetails = await getPlaceDetails(placeId, "en");
+    const filteredAttributes = allAttributes
+      .filter((a) => validAttributeIds.has(a.attribute_id))
+      .filter((a) => INCLUDE_REVIEWS || a.key !== "reviews"); // 👈 hier wird `reviews` ggf. ausgeschlossen
 
     for (const attr of filteredAttributes) {
       let rawValue = null;
@@ -199,7 +199,7 @@ async function enrichLocationValues() {
     }
   }
 
-  console.log("🎉 Gefilterte Attribut-Erweiterung abgeschlossen.");
+  console.log("🎉 Attribut-Erweiterung abgeschlossen.");
 }
 
 enrichLocationValues();
