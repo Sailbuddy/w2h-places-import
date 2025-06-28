@@ -8,7 +8,7 @@ dotenv.config();
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_KEY // angepasst für GitHub Actions
 );
 
 const inputPath = process.argv[2] || 'data/place_ids_archive.json';
@@ -49,7 +49,6 @@ async function run() {
 
     const category_id = loc.category_id;
 
-    // Bestehende Kombinationen laden
     const { data: existingLinks, error: linkErr } = await supabase
       .from('attributes_meet_categories')
       .select('attribute_id, category_id')
@@ -63,14 +62,11 @@ async function run() {
     const existingSet = new Set(existingLinks.map(l => `${l.attribute_id}_${l.category_id}`));
 
     const newLinks = attributes
-      .map(a => ({
-        attribute_id: a.attribute_id,
-        category_id: category_id
-      }))
+      .map(a => ({ attribute_id: a.attribute_id, category_id }))
       .filter(link => !existingSet.has(`${link.attribute_id}_${link.category_id}`));
 
     if (newLinks.length === 0) {
-      console.log(`🟡 Keine neuen Links nötig für ${placeId} (Kategorie ${category_id})`);
+      console.log(`🟡 Keine neuen Zuordnungen nötig für ${placeId} (Kategorie ${category_id})`);
       continue;
     }
 
