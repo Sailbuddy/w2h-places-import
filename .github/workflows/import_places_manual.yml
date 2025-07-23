@@ -46,3 +46,11 @@ jobs:
         
       - name: Leere place_ids.json nach manuellem Import
         run: echo "[]" > data/place_ids.json
+
+      - name: Commit: Leere place_ids.json nach manuellem Import
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add data/place_ids.json
+          git commit -m "Leere place_ids.json nach manuellem Import"
+          git push
