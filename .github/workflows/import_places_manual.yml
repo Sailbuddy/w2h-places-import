@@ -43,3 +43,6 @@ jobs:
 
       - name: Attributwerte mehrsprachig & strukturiert einfügen (inkl. Reviews)
         run: node scripts/enrich_location_values.js data/place_ids.json
+        
+      - name: Leere place_ids.json nach manuellem Import
+        run: echo "[]" > data/place_ids.json
