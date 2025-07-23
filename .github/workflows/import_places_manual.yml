@@ -1,4 +1,4 @@
-name: Manueller Import Google Places
+name: Import
 
 on:
   workflow_dispatch:
@@ -19,12 +19,12 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
 
       - name: Install Dependencies
-        run: npm install axios dotenv @supabase/supabase-js node-fetch
+        run: npm install axis dotenv @supabase/supabase-js node-fetch
 
       - name: "Vorbereitung: Attribut-Zuordnung zu Kategorien"
         run: node scripts/prepare_attribute_category_links.js data/place_ids.json
@@ -38,12 +38,12 @@ jobs:
       - name: Locations importieren (manuell)
         run: node scripts/import_places.js data/place_ids.json
 
-      - name: Name + Beschreibung einfügen (mehrsprachig)
+      - name: Name & Beschreibung einfügen (mehrsprachig)
         run: node scripts/fill_names_and_descriptions.js data/place_ids.json
 
       - name: Attributwerte mehrsprachig & strukturiert einfügen (inkl. Reviews)
         run: node scripts/enrich_location_values.js data/place_ids.json
-        
+
       - name: Leere place_ids.json nach manuellem Import
         run: echo "[]" > data/place_ids.json
 
