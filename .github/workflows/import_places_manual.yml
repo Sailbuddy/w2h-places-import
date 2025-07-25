@@ -47,7 +47,7 @@ jobs:
       - name: ✅ place_ids.json leeren nach dem Importlauf
         run: node scripts/place_ids_leeren.js
         
-      - name: 🔁 Trigger export_all_jsons Workflow in w2h-exporter
+      - name: 🔁 Trigger precheck_and_export Workflow in w2h-exporter
         run: >
           curl -X POST
           -H "Authorization: token ${{ secrets.GH_PERSONAL_TOKEN }}"
