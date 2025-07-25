@@ -52,7 +52,7 @@ jobs:
           curl -X POST
           -H "Authorization: token ${{ secrets.GH_PERSONAL_TOKEN }}"
           -H "Accept: application/vnd.github.v3+json"
-          https://api.github.com/repos/Sailbuddy/w2h-json-exports/actions/workflows/export.yml/dispatches
+          https://api.github.com/repos/Sailbuddy/w2h-json-exports/actions/workflows/precheck_and_export.yml/dispatches
           -d '{"ref":"main"}'
 
         
