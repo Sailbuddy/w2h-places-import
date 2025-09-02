@@ -1,14 +1,13 @@
-name: "📥 Import Google Places mit Attribut-Scan"
+name: "📥 Import Google Places (manuell)"
 
 on:
-  schedule:
-    - cron: '0 2 * * *'  # täglicher Lauf um 02:00 UTC
-  workflow_dispatch:
+  workflow_dispatch: {}
+  # schedule:
+  #   - cron: '0 2 * * *'   # deaktiviert
 
 jobs:
   import:
     runs-on: ubuntu-latest
-
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -17,31 +16,21 @@ jobs:
       INCLUDE_REVIEWS: false
 
     steps:
-      - name: "📦 Checkout Repository"
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with: { node-version: '20' }
+      - run: npm install axios dotenv @supabase/supabase-js node-fetch
 
-      - name: "🧰 Setup Node.js"
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20'
-
-      - name: "📦 Install Dependencies"
-        run: npm install axios dotenv @supabase/supabase-js node-fetch
-
+      # Nur bei Bedarf manuell starten
       - name: "🍽️ Vorbereitung: Attribut-Zuordnung zu Kategorien"
         run: node scripts/prepare_attribute_category_links.js data/place_ids_archive.json
-
       - name: "✳️ Auto-Erweiterung Attributliste (aus Google API)"
         run: node scripts/import_attribute_definitions.js data/place_ids_archive.json
-
-      - name: "🧠 Automatischer Kategorien-Sync inkl. Übersetzung (KI)"
+      - name: "🧠 Kategorien-Sync inkl. Übersetzung"
         run: node scripts/fetch_categories.js data/place_ids_archive.json
-
       - name: "📍 Import Locations & Attributwerte"
         run: node scripts/import_places.js data/place_ids_archive.json
-
-      - name: "🏷️ Name + Beschreibung einfügen (mehrsprachig)"
+      - name: "🏷️ Name + Beschreibung (mehrsprachig)"
         run: node scripts/fill_names_and_descriptions.js data/place_ids_archive.json
-
-      - name: "🌍 Attributwerte mehrsprachig & strukturiert einfügen (ohne Reviews)"
+      - name: "🌍 Attributwerte mehrsprachig (ohne Reviews)"
         run: node scripts/enrich_location_values.js data/place_ids_archive.json
