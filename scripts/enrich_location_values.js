@@ -11,6 +11,7 @@ const INCLUDE_REVIEWS = process.env.INCLUDE_REVIEWS === "true"; // 👈 Steuerun
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 const LANGUAGES = ["de", "en", "it", "fr", "hr"];
+const NO_LANG = "und"; // 👈 neutraler Sprachcode für nicht-sprachliche Werte
 const filepath = process.argv[2] || "data/place_ids.json";
 
 function loadPlaceIdsFromFile(path) {
@@ -126,7 +127,7 @@ async function enrichLocationValues() {
 
     const filteredAttributes = allAttributes
       .filter((a) => validAttributeIds.has(a.attribute_id))
-      .filter((a) => INCLUDE_REVIEWS || a.key !== "reviews"); // 👈 hier wird `reviews` ggf. ausgeschlossen
+      .filter((a) => INCLUDE_REVIEWS || a.key !== "reviews"); // 👈 ggf. Reviews ausschließen
 
     for (const attr of filteredAttributes) {
       let rawValue = null;
@@ -146,7 +147,8 @@ async function enrichLocationValues() {
         if (!rawValue) continue;
       }
 
-      const langs = attr.multilingual ? LANGUAGES : ["de"];
+      // nicht-mehrsprachige Attribute (inkl. photos) mit 'und' speichern
+      const langs = attr.multilingual ? LANGUAGES : [NO_LANG];
 
       for (const lang of langs) {
         let translatedValue = rawValue;
@@ -158,28 +160,51 @@ async function enrichLocationValues() {
         const insertData = {
           location_id: location.id,
           attribute_id: attr.attribute_id,
-          language_code: lang,
+          language_code: attr.multilingual ? lang : NO_LANG,
           updated_at: new Date().toISOString(),
         };
 
         if (attr.key.startsWith("photo_")) {
+          // Fotos grundsätzlich neutral ('und') in value_json ablegen
+          insertData.language_code = NO_LANG;
           insertData.value_json = rawValue;
         } else {
           switch (attr.input_type) {
             case "text":
-            case "json":
               insertData.value_text = translatedValue;
               break;
+
+            case "json": {
+              // 🔧 FIX: JSON-Felder in value_json speichern (mit sicherem Parse)
+              let jsonVal = translatedValue;
+              if (typeof jsonVal === "string") {
+                try {
+                  jsonVal = JSON.parse(jsonVal);
+                } catch (e) {
+                  // Fallback: wenn kein valides JSON → in value_text ablegen
+                  jsonVal = null;
+                  insertData.value_text = translatedValue;
+                }
+              }
+              if (jsonVal !== null) {
+                insertData.value_json = jsonVal;
+              }
+              break;
+            }
+
             case "number":
               insertData.value_number = parseFloat(translatedValue);
               break;
+
             case "boolean":
             case "bool":
               insertData.value_bool = translatedValue === "true" || translatedValue === true;
               break;
+
             case "option":
               insertData.value_option = translatedValue;
               break;
+
             default:
               console.warn(`⚠️ Unbekannter input_type (${attr.input_type}) für ${attr.key}`);
               continue;
