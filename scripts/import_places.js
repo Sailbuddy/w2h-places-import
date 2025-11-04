@@ -12,16 +12,70 @@ function getActiveUpdateLevels() {
   const weekday = today.getDay();      // 0 = Sonntag
   const dayOfMonth = today.getDate();  // 1–31
   const levels = [1]; // täglich immer
-
   if (weekday === 0) levels.push(2);   // wöchentlich (Sonntag)
   if (dayOfMonth === 1) levels.push(3); // monatlich (1. des Monats)
-
   return levels;
+}
+
+/**
+ * Mappe interne Attribute-Keys -> gültige Google Places "fields".
+ * - Entfernt unbekannte Keys
+ * - Fügt ein sinnvolles Basis-Set stets hinzu
+ * - Dedupliziert
+ */
+function toGoogleFields(keys) {
+  const map = {
+    // Fotos
+    photos: 'photos',
+    photo_1: 'photos',
+    photo_2: 'photos',
+    photo_3: 'photos',
+    photo_4: 'photos',
+    photo_5: 'photos',
+    // Öffnungszeiten
+    'opening_hours': 'opening_hours',
+    'opening_hours.open_now': 'opening_hours',
+    'opening_hours.periods': 'opening_hours',
+    'opening_hours.periods[0].open.day': 'opening_hours',
+    'opening_hours.periods[0].open.time': 'opening_hours',
+    'opening_hours.weekday_text': 'opening_hours',
+    // Name / Adresse / Basics
+    name: 'name',
+    address: 'formatted_address',
+    formatted_address: 'formatted_address',
+    phone: 'formatted_phone_number',
+    formatted_phone_number: 'formatted_phone_number',
+    website: 'website',
+    url: 'url',
+    maps_url: 'url',
+    rating: 'rating',
+    price_level: 'price_level',
+    plus_code: 'plus_code',
+    types: 'types',
+    category: 'types',
+    geometry: 'geometry',
+    lat: 'geometry',
+    lng: 'geometry',
+    permanently_closed: 'business_status', // alt -> business_status
+  };
+
+  const whitelist = new Set(Object.values(map)); // was wir prinzipiell akzeptieren
+  // Minimales, sinnvolles Basis-Set:
+  const base = ['name','formatted_address','geometry','url','website',
+                'formatted_phone_number','rating','price_level','plus_code','types'];
+
+  const out = new Set(base);
+  for (const k of keys || []) {
+    const g = map[k];
+    if (g && whitelist.has(g)) out.add(g);
+  }
+  return Array.from(out);
 }
 
 async function fetchGooglePlaceData(placeId, language, allowedKeys) {
   const apiKey = process.env.GOOGLE_API_KEY;
-  const fields = allowedKeys.join(',');
+  const googleFields = toGoogleFields(allowedKeys);
+  const fields = googleFields.join(',');
   const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=${fields}&language=${language}&key=${apiKey}`;
 
   try {
@@ -32,7 +86,6 @@ async function fetchGooglePlaceData(placeId, language, allowedKeys) {
       console.warn(`⚠️ Fehler beim Abruf für ${placeId} (${language}): ${data.status}`);
       return null;
     }
-
     return data.result;
   } catch (err) {
     console.error(`❌ Netzwerkfehler bei ${placeId} (${language}): ${err.message}`);
@@ -54,7 +107,6 @@ async function resolveCategoryId(googleTypes) {
     console.warn(`⚠️ Keine Kategorie-ID gefunden für Typ: ${firstType}, fallback zu ID 1`);
     return 1;
   }
-
   return data.id;
 }
 
@@ -63,7 +115,7 @@ async function insertOrUpdateLocation(placeEntry, placeDetails) {
   const categoryId = await resolveCategoryId(placeDetails?.types);
   const now = new Date().toISOString();
 
-  const { data: existing, error: lookupError } = await supabase
+  const { data: existing } = await supabase
     .from('locations')
     .select('id')
     .eq('google_place_id', placeEntry.placeId)
@@ -177,12 +229,15 @@ async function processPlaces() {
 
   if (attrError) throw new Error(`❌ Fehler beim Laden der Attributdefinitionen: ${attrError.message}`);
 
-  const allowedKeys = activeAttributes
+  const allowedKeys = (activeAttributes || [])
     .filter(attr => activeLevels.includes(attr.update_frequency))
     .map(attr => attr.key);
 
-  console.log(`🔎 Erlaube Felder für heute (${new Date().toISOString()}):`);
+  // Neu: zeige beides an – interne Keys und die daraus abgeleiteten Google-Felder
+  console.log(`🔎 Erlaube interne Keys heute (${new Date().toISOString()}):`);
   console.log(allowedKeys.join(', '));
+  console.log('🔎 Google fields:');
+  console.log(toGoogleFields(allowedKeys).join(', '));
 
   const attributeMapping = await loadAttributeMapping();
 
