@@ -13,10 +13,13 @@ jobs:
       GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       INCLUDE_REVIEWS: true
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -46,7 +49,19 @@ jobs:
 
       - name: ✅ place_ids.json leeren nach dem Importlauf
         run: node scripts/place_ids_leeren.js
-        
+
+      - name: 💾 Geleerte place_ids.json committen & pushen
+        run: |
+          git config user.name "w2h-bot"
+          git config user.email "bot@wind2horizon.com"
+          git add data/place_ids.json
+          if git diff --cached --quiet; then
+            echo "Keine Änderungen – nichts zu committen."
+          else
+            git commit -m "Leere place_ids.json nach manuellem Importlauf"
+            git push origin HEAD:main
+          fi
+
       - name: 🔁 Trigger precheck_and_export Workflow in w2h-exporter
         run: >
           curl -X POST
@@ -54,5 +69,3 @@ jobs:
           -H "Accept: application/vnd.github.v3+json"
           https://api.github.com/repos/Sailbuddy/w2h-json-exports/actions/workflows/precheck_and_export.yml/dispatches
           -d '{"ref":"main"}'
-
-        
