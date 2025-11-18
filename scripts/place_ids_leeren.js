@@ -1,71 +1,41 @@
-name: Manueller Import Google Places
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
 
-on:
-  workflow_dispatch:
+async function clearPlaceIdsFile() {
+  const filePath = path.resolve('./data/place_ids.json');
 
-jobs:
-  import:
-    runs-on: ubuntu-latest
+  try {
+    console.log(`Versuche, Datei zu löschen: ${filePath}`);
 
-    env:
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      INCLUDE_REVIEWS: true
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    // Datei leeren
+    fs.writeFileSync(filePath, '[]', 'utf-8');
+    console.log(`Die Datei ${filePath} wurde erfolgreich geleert.`);
 
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+    // Git Commit und Push vorbereiten
+    const repoPath = path.resolve('./');
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20'
+    // Git Config setzen (Name und Email)
+    execSync('git config user.name "github-actions"', { cwd: repoPath });
+    execSync('git config user.email "actions@github.com"', { cwd: repoPath });
 
-      - name: Install Dependencies
-        run: npm install axios dotenv @supabase/supabase-js node-fetch
+    // Datei zum Commit hinzufügen
+    execSync('git add data/place_ids.json', { cwd: repoPath });
 
-      - name: "Vorbereitung: Attribut-Zuordnung zu Kategorien"
-        run: node scripts/prepare_attribute_category_links.js data/place_ids.json
+    // Commit erstellen (mit Fehlerbehandlung, falls keine Änderung)
+    try {
+      execSync('git commit -m "Automatisches Leeren der place_ids.json nach Import"', { cwd: repoPath });
+      console.log('✅ Git Commit erfolgreich erstellt.');
+    } catch (commitError) {
+      console.log('ℹ️ Kein neuer Commit: vermutlich keine Änderung in der Datei.');
+    }
 
-      - name: Auto-Erweiterung Attributliste (aus Google API)
-        run: node scripts/import_attribute_definitions.js data/place_ids.json
+    // Änderungen pushen
+    execSync('git push', { cwd: repoPath });
+    console.log('✅ Änderungen erfolgreich gepusht.');
+  } catch (err) {
+    console.error('❌ Fehler beim Leeren und Git-Commit/Push:', err);
+  }
+}
 
-      - name: Kategorien ermitteln (aus place_ids.json)
-        run: node scripts/fetch_categories.js data/place_ids.json
-
-      - name: Locations importieren (manuell)
-        run: node scripts/import_places.js data/place_ids.json
-
-      - name: Name + Beschreibung einfügen (mehrsprachig)
-        run: node scripts/fill_names_and_descriptions.js data/place_ids.json
-
-      - name: Attributwerte mehrsprachig & strukturiert einfügen (inkl. Reviews)
-        run: node scripts/enrich_location_values.js data/place_ids.json
-
-      - name: ✅ place_ids.json leeren nach dem Importlauf
-        run: node scripts/place_ids_leeren.js
-
-      - name: 💾 Geleerte place_ids.json committen & pushen
-        run: |
-          git config user.name "w2h-bot"
-          git config user.email "bot@wind2horizon.com"
-          git add data/place_ids.json
-          if git diff --cached --quiet; then
-            echo "Keine Änderungen – nichts zu committen."
-          else
-            git commit -m "Leere place_ids.json nach manuellem Importlauf"
-            git push origin HEAD:main
-          fi
-
-      - name: 🔁 Trigger precheck_and_export Workflow in w2h-exporter
-        run: >
-          curl -X POST
-          -H "Authorization: token ${{ secrets.GH_PERSONAL_TOKEN }}"
-          -H "Accept: application/vnd.github.v3+json"
-          https://api.github.com/repos/Sailbuddy/w2h-json-exports/actions/workflows/precheck_and_export.yml/dispatches
-          -d '{"ref":"main"}'
+clearPlaceIdsFile();
