@@ -1,0 +1,47 @@
+name: "📥 Import Google Places (manuell – FULL)"
+
+on:
+  workflow_dispatch: {}      # nur manuell, kein schedule
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      INCLUDE_REVIEWS: false
+      # ⬇️ Hier aktivieren wir den "fetten" Feldsatz:
+      FULL_IMPORT: true
+
+    steps:
+      - name: "📥 Checkout Repo"
+        uses: actions/checkout@v3
+
+      - name: "🧰 Node einrichten"
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+
+      - name: "📦 Dependencies installieren"
+        run: npm install axios dotenv @supabase/supabase-js node-fetch
+
+      # ⬇️ Basis: nur die kleine Liste data/place_ids.json
+      - name: "🍽️ Vorbereitung: Attribut-Zuordnung zu Kategorien"
+        run: node scripts/prepare_attribute_category_links.js data/place_ids.json
+
+      - name: "✳️ Auto-Erweiterung Attributliste (aus Google API)"
+        run: node scripts/import_attribute_definitions.js data/place_ids.json
+
+      - name: "🧠 Kategorien-Sync inkl. Übersetzung"
+        run: node scripts/fetch_categories.js data/place_ids.json
+
+      - name: "📍 Import Locations & Attributwerte (FULL_FIELDS)"
+        run: node scripts/import_places.js data/place_ids.json
+
+      - name: "🏷️ Name + Beschreibung (mehrsprachig)"
+        run: node scripts/fill_names_and_descriptions.js data/place_ids.json
+
+      - name: "🌍 Attributwerte mehrsprachig (ohne Reviews)"
+        run: node scripts/enrich_location_values.js data/place_ids.json

@@ -8,6 +8,12 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 const filepath = process.argv[2] || 'data/place_ids_archive.json';
 
 function getActiveUpdateLevels() {
+  // 🔁 FULL_IMPORT: alle Ebenen 1,2,3 immer aktiv
+  if (process.env.FULL_IMPORT === 'true') {
+    console.log('🟢 FULL_IMPORT aktiv – verwende alle Update-Level (1,2,3).');
+    return [1, 2, 3];
+  }
+
   const today = new Date();
   const weekday = today.getDay();      // 0 = Sonntag
   const dayOfMonth = today.getDate();  // 1–31
@@ -22,6 +28,7 @@ function getActiveUpdateLevels() {
  * - Entfernt unbekannte Keys
  * - Fügt ein sinnvolles Basis-Set stets hinzu
  * - Dedupliziert
+ * - Bei FULL_IMPORT werden zusätzliche Felder erzwungen
  */
 function toGoogleFields(keys) {
   const map = {
@@ -32,6 +39,7 @@ function toGoogleFields(keys) {
     photo_3: 'photos',
     photo_4: 'photos',
     photo_5: 'photos',
+
     // Öffnungszeiten
     'opening_hours': 'opening_hours',
     'opening_hours.open_now': 'opening_hours',
@@ -39,6 +47,7 @@ function toGoogleFields(keys) {
     'opening_hours.periods[0].open.day': 'opening_hours',
     'opening_hours.periods[0].open.time': 'opening_hours',
     'opening_hours.weekday_text': 'opening_hours',
+
     // Name / Adresse / Basics
     name: 'name',
     address: 'formatted_address',
@@ -57,18 +66,71 @@ function toGoogleFields(keys) {
     lat: 'geometry',
     lng: 'geometry',
     permanently_closed: 'business_status', // alt -> business_status
+
+    // 🔁 Erweiterte Felder für FULL_IMPORT (1:1 Durchreichung)
+    business_status: 'business_status',
+    current_opening_hours: 'current_opening_hours',
+    international_phone_number: 'international_phone_number',
+    user_ratings_total: 'user_ratings_total',
+    editorial_summary: 'editorial_summary',
+    serves_breakfast: 'serves_breakfast',
+    serves_lunch: 'serves_lunch',
+    serves_dinner: 'serves_dinner',
+    serves_beer: 'serves_beer',
+    serves_wine: 'serves_wine',
+    serves_coffee: 'serves_coffee',
+    reservable: 'reservable',
+    wheelchair_accessible_entrance: 'wheelchair_accessible_entrance',
   };
 
   const whitelist = new Set(Object.values(map)); // was wir prinzipiell akzeptieren
+
   // Minimales, sinnvolles Basis-Set:
-  const base = ['name','formatted_address','geometry','url','website',
-                'formatted_phone_number','rating','price_level','plus_code','types'];
+  const base = [
+    'name',
+    'formatted_address',
+    'geometry',
+    'url',
+    'website',
+    'formatted_phone_number',
+    'rating',
+    'price_level',
+    'plus_code',
+    'types',
+  ];
 
   const out = new Set(base);
+
+  // Aus den aktiven Attribut-Keys ableiten
   for (const k of keys || []) {
     const g = map[k];
     if (g && whitelist.has(g)) out.add(g);
   }
+
+  // 🔁 Zusatzfelder, die bei FULL_IMPORT IMMER angefragt werden sollen
+  if (process.env.FULL_IMPORT === 'true') {
+    const fullExtra = [
+      'business_status',
+      'opening_hours',
+      'current_opening_hours',
+      'international_phone_number',
+      'user_ratings_total',
+      'editorial_summary',
+      'photos',
+      'serves_breakfast',
+      'serves_lunch',
+      'serves_dinner',
+      'serves_beer',
+      'serves_wine',
+      'serves_coffee',
+      'reservable',
+      'wheelchair_accessible_entrance',
+    ];
+    for (const g of fullExtra) {
+      if (whitelist.has(g)) out.add(g);
+    }
+  }
+
   return Array.from(out);
 }
 
@@ -76,7 +138,9 @@ async function fetchGooglePlaceData(placeId, language, allowedKeys) {
   const apiKey = process.env.GOOGLE_API_KEY;
   const googleFields = toGoogleFields(allowedKeys);
   const fields = googleFields.join(',');
-  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=${fields}&language=${language}&key=${apiKey}`;
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(
+    placeId
+  )}&fields=${fields}&language=${language}&key=${apiKey}`;
 
   try {
     const response = await fetch(url);
@@ -121,22 +185,27 @@ async function insertOrUpdateLocation(placeEntry, placeDetails) {
     .eq('google_place_id', placeEntry.placeId)
     .maybeSingle();
 
-  const { data, error } = await supabase.from('locations').upsert([{
-    google_place_id: placeEntry.placeId,
-    display_name: displayName,
-    address: placeDetails?.formatted_address || null,
-    website: placeDetails?.website || null,
-    maps_url: placeDetails?.url || null,
-    category_id: categoryId,
-    phone: placeDetails?.formatted_phone_number || null,
-    rating: placeDetails?.rating || null,
-    price_level: placeDetails?.price_level || null,
-    lat: placeDetails?.geometry?.location?.lat || null,
-    lng: placeDetails?.geometry?.location?.lng || null,
-    plus_code: placeDetails?.plus_code?.global_code || null,
-    updated_at: now,
-    created_at: existing ? undefined : now
-  }], { onConflict: 'google_place_id' }).select().single();
+  const { data, error } = await supabase.from('locations').upsert(
+    [
+      {
+        google_place_id: placeEntry.placeId,
+        display_name: displayName,
+        address: placeDetails?.formatted_address || null,
+        website: placeDetails?.website || null,
+        maps_url: placeDetails?.url || null,
+        category_id: categoryId,
+        phone: placeDetails?.formatted_phone_number || null,
+        rating: placeDetails?.rating || null,
+        price_level: placeDetails?.price_level || null,
+        lat: placeDetails?.geometry?.location?.lat || null,
+        lng: placeDetails?.geometry?.location?.lng || null,
+        plus_code: placeDetails?.plus_code?.global_code || null,
+        updated_at: now,
+        created_at: existing ? undefined : now,
+      },
+    ],
+    { onConflict: 'google_place_id' }
+  ).select().single();
 
   if (error) {
     throw new Error(`❌ Fehler beim Upsert der Location: ${error.message}`);
@@ -249,7 +318,7 @@ async function processPlaces() {
       const detailsHr = await fetchGooglePlaceData(placeEntry.placeId, 'hr', allowedKeys);
       const detailsFr = await fetchGooglePlaceData(placeEntry.placeId, 'fr', allowedKeys);
 
-      const location = await insertOrUpdateLocation(placeEntry, detailsDe);
+      const location = await insertOrUpdateLocation(placeEntry, detailsDe || {});
 
       const all = {
         name_de: detailsDe?.name,
