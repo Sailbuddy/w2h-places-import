@@ -1,0 +1,17 @@
+# Ignoriere Umgebungsdateien
+.env
+
+# Node-Abhängigkeiten
+node_modules/
+
+# Logs und temporäre Dateien
+*.log
+.DS_Store
+npm-debug.log*
+
+# Datenordner (falls du lokale Daten zwischenspeicherst)
+data/*.json
+
+# Optional: IntelliJ/WebStorm/VSCode-Dateien
+.idea/
+.vscode/

@@ -18,6 +18,9 @@
   "homepage": "https://github.com/Sailbuddy/w2h-places-import#readme",
   "description": "",
   "dependencies": {
+    "@supabase/supabase-js": "^2.79.0",
+    "axios": "^1.13.2",
+    "dotenv": "^17.2.3",
     "node-fetch": "^3.3.2"
   }
 }
