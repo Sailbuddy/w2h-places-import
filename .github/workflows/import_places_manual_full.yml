@@ -6,28 +6,36 @@ on:
 jobs:
   import:
     runs-on: ubuntu-latest
+
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      INCLUDE_REVIEWS: false
-      # ⬇️ Hier aktivieren wir den "fetten" Feldsatz:
-      FULL_IMPORT: true
+      INCLUDE_REVIEWS: "false"
+      # ⚙️ Schalter für den fetten Feldsatz in import_places.js
+      FULL_IMPORT: "true"
 
     steps:
       - name: "📥 Checkout Repo"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: "🧰 Node einrichten"
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: "20"
 
       - name: "📦 Dependencies installieren"
-        run: npm install axios dotenv @supabase/supabase-js node-fetch
+        run: npm ci
 
-      # ⬇️ Basis: nur die kleine Liste data/place_ids.json
+      # 🔎 Optionales Debug: zeigt, dass FULL_IMPORT auch wirklich da ist
+      - name: "🔎 Env-Check"
+        run: |
+          echo "FULL_IMPORT=${FULL_IMPORT}"
+          node -v
+          npm -v
+
+      # ⬇️ Basis: place_ids.json (von dir aus der DB gebaut: nur active=true)
       - name: "🍽️ Vorbereitung: Attribut-Zuordnung zu Kategorien"
         run: node scripts/prepare_attribute_category_links.js data/place_ids.json
 

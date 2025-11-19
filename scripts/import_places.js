@@ -134,20 +134,26 @@ function toGoogleFields(keys) {
   return Array.from(out);
 }
 
+/**
+ * Holt Place-Details von Google.
+ * Gibt nur das `result`-Objekt zurück – oder `null`, wenn status != OK.
+ */
 async function fetchGooglePlaceData(placeId, language, allowedKeys) {
   const apiKey = process.env.GOOGLE_API_KEY;
   const googleFields = toGoogleFields(allowedKeys);
-  const fields = googleFields.join(',');
+  const fieldsParam = googleFields.join(','); // ⚠️ keine Leerzeichen!
   const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(
     placeId
-  )}&fields=${fields}&language=${language}&key=${apiKey}`;
+  )}&fields=${fieldsParam}&language=${language}&key=${apiKey}`;
 
   try {
     const response = await fetch(url);
     const data = await response.json();
 
     if (data.status !== 'OK') {
-      console.warn(`⚠️ Fehler beim Abruf für ${placeId} (${language}): ${data.status}`);
+      console.warn(
+        `⚠️ Fehler beim Abruf für ${placeId} (${language}): ${data.status} – Anfrage wird übersprungen.`
+      );
       return null;
     }
     return data.result;
@@ -185,27 +191,31 @@ async function insertOrUpdateLocation(placeEntry, placeDetails) {
     .eq('google_place_id', placeEntry.placeId)
     .maybeSingle();
 
-  const { data, error } = await supabase.from('locations').upsert(
-    [
-      {
-        google_place_id: placeEntry.placeId,
-        display_name: displayName,
-        address: placeDetails?.formatted_address || null,
-        website: placeDetails?.website || null,
-        maps_url: placeDetails?.url || null,
-        category_id: categoryId,
-        phone: placeDetails?.formatted_phone_number || null,
-        rating: placeDetails?.rating || null,
-        price_level: placeDetails?.price_level || null,
-        lat: placeDetails?.geometry?.location?.lat || null,
-        lng: placeDetails?.geometry?.location?.lng || null,
-        plus_code: placeDetails?.plus_code?.global_code || null,
-        updated_at: now,
-        created_at: existing ? undefined : now,
-      },
-    ],
-    { onConflict: 'google_place_id' }
-  ).select().single();
+  const { data, error } = await supabase
+    .from('locations')
+    .upsert(
+      [
+        {
+          google_place_id: placeEntry.placeId,
+          display_name: displayName,
+          address: placeDetails?.formatted_address || null,
+          website: placeDetails?.website || null,
+          maps_url: placeDetails?.url || null,
+          category_id: categoryId,
+          phone: placeDetails?.formatted_phone_number || null,
+          rating: placeDetails?.rating || null,
+          price_level: placeDetails?.price_level || null,
+          lat: placeDetails?.geometry?.location?.lat ?? null,
+          lng: placeDetails?.geometry?.location?.lng ?? null,
+          plus_code: placeDetails?.plus_code?.global_code || null,
+          updated_at: now,
+          created_at: existing ? undefined : now,
+        },
+      ],
+      { onConflict: 'google_place_id' }
+    )
+    .select()
+    .single();
 
   if (error) {
     throw new Error(`❌ Fehler beim Upsert der Location: ${error.message}`);
@@ -224,7 +234,7 @@ async function loadAttributeMapping() {
   if (error) throw new Error(`Fehler beim Laden des Attribut-Mappings: ${error.message}`);
 
   const mapping = {};
-  data.forEach(attr => {
+  data.forEach((attr) => {
     mapping[attr.key] = attr.attribute_id;
   });
   return mapping;
@@ -271,7 +281,7 @@ function loadPlaceIdsFromFile(filepath) {
     const raw = fs.readFileSync(filepath, 'utf-8');
     const rawData = JSON.parse(raw);
 
-    return rawData.map(entry => {
+    return rawData.map((entry) => {
       if (typeof entry === 'string') return { placeId: entry, preferredName: null };
       return { placeId: entry.placeId, preferredName: entry.preferredName || null };
     });
@@ -299,26 +309,36 @@ async function processPlaces() {
   if (attrError) throw new Error(`❌ Fehler beim Laden der Attributdefinitionen: ${attrError.message}`);
 
   const allowedKeys = (activeAttributes || [])
-    .filter(attr => activeLevels.includes(attr.update_frequency))
-    .map(attr => attr.key);
+    .filter((attr) => activeLevels.includes(attr.update_frequency))
+    .map((attr) => attr.key);
 
-  // Neu: zeige beides an – interne Keys und die daraus abgeleiteten Google-Felder
+  // Debug-Ausgabe: interne Keys + Google-Felder
   console.log(`🔎 Erlaube interne Keys heute (${new Date().toISOString()}):`);
   console.log(allowedKeys.join(', '));
-  console.log('🔎 Google fields:');
-  console.log(toGoogleFields(allowedKeys).join(', '));
+  const googleFields = toGoogleFields(allowedKeys);
+  console.log('🔎 Google fields (Details-API):');
+  console.log(googleFields.join(', '));
 
   const attributeMapping = await loadAttributeMapping();
 
   for (const placeEntry of placeEntries) {
     try {
+      // 🟢 Deutsch = Primärquelle – ohne gültige DE-Daten kein Update
       const detailsDe = await fetchGooglePlaceData(placeEntry.placeId, 'de', allowedKeys);
+      if (!detailsDe) {
+        console.warn(
+          `⏭️ Überspringe ${placeEntry.placeId}, weil keine gültigen DE-Details vorliegen. Bestehende DB-Daten bleiben unverändert.`
+        );
+        continue;
+      }
+
+      // Weitere Sprachen sind optional
       const detailsEn = await fetchGooglePlaceData(placeEntry.placeId, 'en', allowedKeys);
       const detailsIt = await fetchGooglePlaceData(placeEntry.placeId, 'it', allowedKeys);
       const detailsHr = await fetchGooglePlaceData(placeEntry.placeId, 'hr', allowedKeys);
       const detailsFr = await fetchGooglePlaceData(placeEntry.placeId, 'fr', allowedKeys);
 
-      const location = await insertOrUpdateLocation(placeEntry, detailsDe || {});
+      const location = await insertOrUpdateLocation(placeEntry, detailsDe);
 
       const all = {
         name_de: detailsDe?.name,
