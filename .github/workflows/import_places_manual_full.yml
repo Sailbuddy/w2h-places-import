@@ -53,3 +53,18 @@ jobs:
 
       - name: "🌍 Attributwerte mehrsprachig (ohne Reviews)"
         run: node scripts/enrich_location_values.js data/place_ids.json
+
+      - name: "✅ place_ids.json leeren nach dem Importlauf"
+        run: node scripts/place_ids_leeren.js
+
+      - name: "💾 Geleerte place_ids.json committen & pushen"
+        run: |
+          git config user.name "w2h-bot"
+          git config user.email "bot@wind2horizon.com"
+          git add data/place_ids.json
+          if git diff --cached --quiet; then
+            echo "Keine Änderungen – nichts zu committen."
+          else
+            git commit -m "Leere place_ids.json nach manuellem FULL-Importlauf"
+            git push origin HEAD:main
+          fi
