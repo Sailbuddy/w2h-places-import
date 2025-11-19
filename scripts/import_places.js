@@ -15,20 +15,17 @@ function getActiveUpdateLevels() {
   }
 
   const today = new Date();
-  const weekday = today.getDay();      // 0 = Sonntag
-  const dayOfMonth = today.getDate();  // 1–31
+  const weekday = today.getDay(); // 0 = Sonntag
+  const dayOfMonth = today.getDate(); // 1–31
   const levels = [1]; // täglich immer
-  if (weekday === 0) levels.push(2);   // wöchentlich (Sonntag)
+  if (weekday === 0) levels.push(2); // wöchentlich (Sonntag)
   if (dayOfMonth === 1) levels.push(3); // monatlich (1. des Monats)
   return levels;
 }
 
 /**
  * Mappe interne Attribute-Keys -> gültige Google Places "fields".
- * - Entfernt unbekannte Keys
- * - Fügt ein sinnvolles Basis-Set stets hinzu
- * - Dedupliziert
- * - Bei FULL_IMPORT werden zusätzliche Felder erzwungen
+ * Wird aktuell nur zu Debug-Zwecken verwendet.
  */
 function toGoogleFields(keys) {
   const map = {
@@ -41,7 +38,7 @@ function toGoogleFields(keys) {
     photo_5: 'photos',
 
     // Öffnungszeiten
-    'opening_hours': 'opening_hours',
+    opening_hours: 'opening_hours',
     'opening_hours.open_now': 'opening_hours',
     'opening_hours.periods': 'opening_hours',
     'opening_hours.periods[0].open.day': 'opening_hours',
@@ -80,7 +77,7 @@ function toGoogleFields(keys) {
     serves_wine: 'serves_wine',
     serves_coffee: 'serves_coffee',
     reservable: 'reservable',
-    wheelchair_accessible_entrance: 'wheelchair_accessible_entrance',
+    wheelchair_accessible_entrance: 'wheelchair_accessible_entrance'
   };
 
   const whitelist = new Set(Object.values(map)); // was wir prinzipiell akzeptieren
@@ -96,7 +93,7 @@ function toGoogleFields(keys) {
     'rating',
     'price_level',
     'plus_code',
-    'types',
+    'types'
   ];
 
   const out = new Set(base);
@@ -124,7 +121,7 @@ function toGoogleFields(keys) {
       'serves_wine',
       'serves_coffee',
       'reservable',
-      'wheelchair_accessible_entrance',
+      'wheelchair_accessible_entrance'
     ];
     for (const g of fullExtra) {
       if (whitelist.has(g)) out.add(g);
@@ -136,15 +133,29 @@ function toGoogleFields(keys) {
 
 /**
  * Holt Place-Details von Google.
+ * Nutzt bewusst eine kleine, stabile Feldliste.
  * Gibt nur das `result`-Objekt zurück – oder `null`, wenn status != OK.
  */
-async function fetchGooglePlaceData(placeId, language, allowedKeys) {
+async function fetchGooglePlaceData(placeId, language) {
   const apiKey = process.env.GOOGLE_API_KEY;
-  const googleFields = toGoogleFields(allowedKeys);
-  const fieldsParam = googleFields.join(','); // ⚠️ keine Leerzeichen!
+
+  // Bewusst konservative Feldliste – hier hatten wir früher sicher funktionierende Aufrufe
+  const fields = [
+    'name',
+    'formatted_address',
+    'geometry',
+    'url',
+    'website',
+    'formatted_phone_number',
+    'rating',
+    'price_level',
+    'plus_code',
+    'types'
+  ].join(',');
+
   const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(
     placeId
-  )}&fields=${fieldsParam}&language=${language}&key=${apiKey}`;
+  )}&fields=${fields}&language=${language}&key=${apiKey}`;
 
   try {
     const response = await fetch(url);
@@ -152,7 +163,9 @@ async function fetchGooglePlaceData(placeId, language, allowedKeys) {
 
     if (data.status !== 'OK') {
       console.warn(
-        `⚠️ Fehler beim Abruf für ${placeId} (${language}): ${data.status} – Anfrage wird übersprungen.`
+        `⚠️ Fehler beim Abruf für ${placeId} (${language}): ${data.status} – ${
+          data.error_message || 'keine error_message'
+        }`
       );
       return null;
     }
@@ -209,8 +222,8 @@ async function insertOrUpdateLocation(placeEntry, placeDetails) {
           lng: placeDetails?.geometry?.location?.lng ?? null,
           plus_code: placeDetails?.plus_code?.global_code || null,
           updated_at: now,
-          created_at: existing ? undefined : now,
-        },
+          created_at: existing ? undefined : now
+        }
       ],
       { onConflict: 'google_place_id' }
     )
@@ -254,7 +267,7 @@ async function insertLocationValues(locationId, placeDetails, attributeMapping) 
         attribute_id: attributeMapping.name,
         value_text: placeDetails[nameKey],
         language_code: lang,
-        updated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       });
     }
 
@@ -264,7 +277,7 @@ async function insertLocationValues(locationId, placeDetails, attributeMapping) 
         attribute_id: attributeMapping.description,
         value_text: placeDetails[descKey],
         language_code: lang,
-        updated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       });
     }
   }
@@ -312,11 +325,11 @@ async function processPlaces() {
     .filter((attr) => activeLevels.includes(attr.update_frequency))
     .map((attr) => attr.key);
 
-  // Debug-Ausgabe: interne Keys + Google-Felder
+  // Debug-Ausgabe: interne Keys + (theoretische) Google-Felder
   console.log(`🔎 Erlaube interne Keys heute (${new Date().toISOString()}):`);
   console.log(allowedKeys.join(', '));
   const googleFields = toGoogleFields(allowedKeys);
-  console.log('🔎 Google fields (Details-API):');
+  console.log('🔎 Google fields (nur Debug, nicht an API gesendet):');
   console.log(googleFields.join(', '));
 
   const attributeMapping = await loadAttributeMapping();
@@ -324,7 +337,7 @@ async function processPlaces() {
   for (const placeEntry of placeEntries) {
     try {
       // 🟢 Deutsch = Primärquelle – ohne gültige DE-Daten kein Update
-      const detailsDe = await fetchGooglePlaceData(placeEntry.placeId, 'de', allowedKeys);
+      const detailsDe = await fetchGooglePlaceData(placeEntry.placeId, 'de');
       if (!detailsDe) {
         console.warn(
           `⏭️ Überspringe ${placeEntry.placeId}, weil keine gültigen DE-Details vorliegen. Bestehende DB-Daten bleiben unverändert.`
@@ -333,10 +346,10 @@ async function processPlaces() {
       }
 
       // Weitere Sprachen sind optional
-      const detailsEn = await fetchGooglePlaceData(placeEntry.placeId, 'en', allowedKeys);
-      const detailsIt = await fetchGooglePlaceData(placeEntry.placeId, 'it', allowedKeys);
-      const detailsHr = await fetchGooglePlaceData(placeEntry.placeId, 'hr', allowedKeys);
-      const detailsFr = await fetchGooglePlaceData(placeEntry.placeId, 'fr', allowedKeys);
+      const detailsEn = await fetchGooglePlaceData(placeEntry.placeId, 'en');
+      const detailsIt = await fetchGooglePlaceData(placeEntry.placeId, 'it');
+      const detailsHr = await fetchGooglePlaceData(placeEntry.placeId, 'hr');
+      const detailsFr = await fetchGooglePlaceData(placeEntry.placeId, 'fr');
 
       const location = await insertOrUpdateLocation(placeEntry, detailsDe);
 
@@ -350,7 +363,7 @@ async function processPlaces() {
         name_hr: detailsHr?.name,
         description_hr: detailsHr?.formatted_address,
         name_fr: detailsFr?.name,
-        description_fr: detailsFr?.formatted_address,
+        description_fr: detailsFr?.formatted_address
       };
 
       await insertLocationValues(location.id, all, attributeMapping);
