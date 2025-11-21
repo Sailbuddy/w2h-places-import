@@ -20,6 +20,15 @@ if (!inputFile || !fs.existsSync(inputFile)) {
 
 const placeIds = JSON.parse(fs.readFileSync(inputFile, 'utf8'));
 
+// 🔁 Laufinterne Duplikat-Kontrolle pro Google-Type
+const seenTypes = new Set();
+
+// (optional) sehr generische Google-Types, für die wir keine eigenen Kategorien anlegen wollen
+const SKIP_TYPES = new Set([
+  'point_of_interest',
+  'establishment',
+]);
+
 async function translateType(type) {
   const prompt = `
 Gib mir den Begriff "${type}" auf folgenden Sprachen als einfache Wörter oder Kategorienbezeichnungen zurück:
@@ -56,7 +65,7 @@ hr: ...
     const lines = content.split('\n');
     const result = {};
     for (const line of lines) {
-      const [lang, value] = line.split(':').map(s => s.trim());
+      const [lang, value] = line.split(':').map((s) => s.trim());
       if (lang && value) result[lang] = value;
     }
 
@@ -78,17 +87,73 @@ hr: ...
 }
 
 async function ensureCategory(type) {
-  const { data: existing } = await supabase
+  if (!type) return false;
+
+  // 🧱 1) Im aktuellen Lauf schon gesehen?
+  if (seenTypes.has(type)) {
+    // console.log(`🔁 Typ im aktuellen Lauf bereits verarbeitet: ${type}`);
+    return false;
+  }
+  seenTypes.add(type);
+
+  // 🧱 2) In der DB schon vorhanden? (zuerst google_cat_id)
+  let existing = null;
+
+  const { data: byGoogleId, error: e1 } = await supabase
     .from('categories')
-    .select('id')
+    .select('id, name_en, name_de, name_it, name_fr, name_hr, icon, google_cat_id')
     .eq('google_cat_id', type)
     .maybeSingle();
 
+  if (e1) {
+    console.error(`⚠️ Fehler bei Kategorie-Check (google_cat_id=${type}):`, e1.message);
+  }
+  if (byGoogleId) {
+    existing = byGoogleId;
+  }
+
+  // Falls nichts mit google_cat_id gefunden, noch über icon probieren
+  if (!existing) {
+    const { data: byIcon, error: e2 } = await supabase
+      .from('categories')
+      .select('id, name_en, name_de, name_it, name_fr, name_hr, icon, google_cat_id')
+      .eq('icon', type)
+      .maybeSingle();
+
+    if (e2) {
+      console.error(`⚠️ Fehler bei Kategorie-Check (icon=${type}):`, e2.message);
+    }
+    if (byIcon) {
+      existing = byIcon;
+    }
+  }
+
   if (existing) {
-    console.log(`✅ Bereits vorhanden: ${type}`);
+    console.log(`✅ Bereits vorhandene Kategorie für "${type}" (id=${existing.id})`);
+
+    // Optional: sanfter Backfill von Basisfeldern, falls leer
+    const patch = {};
+    if (!existing.google_cat_id) patch.google_cat_id = type;
+    if (!existing.icon) patch.icon = type;
+    if (!existing.name_en) patch.name_en = type;
+
+    if (Object.keys(patch).length > 0) {
+      const { error: updErr } = await supabase
+        .from('categories')
+        .update(patch)
+        .eq('id', existing.id);
+
+      if (updErr) {
+        console.error(`⚠️ Konnte Basisfelder für "${type}" nicht updaten:`, updErr.message);
+      } else {
+        console.log(`🔧 Kategorie ${existing.id} für "${type}" aktualisiert (Basisfelder).`);
+      }
+    }
+
     return false;
   }
 
+  // 🧱 3) Neu übersetzen & anlegen
   const translations = await translateType(type);
 
   const { error } = await supabase.from('categories').insert({
@@ -137,6 +202,8 @@ async function run() {
       }
 
       for (const type of result.types) {
+        // sehr generische Typen überspringen
+        if (!type || SKIP_TYPES.has(type)) continue;
         await ensureCategory(type);
       }
     } catch (err) {
