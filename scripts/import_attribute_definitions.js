@@ -9,24 +9,47 @@ dotenv.config();
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
+// Felder, die wir bei Google anfragen (nur für den Attribut-Scan)
 const fieldsList = [
-  "address_component", "adr_address", "alt_id", "formatted_address", "geometry", "icon", "name",
-  "permanently_closed", "photo", "place_id", "plus_code", "type", "url", "utc_offset", "vicinity",
-  "formatted_phone_number", "opening_hours", "website", "price_level", "rating", "review", "user_ratings_total"
+  'address_component',
+  'adr_address',
+  'alt_id',
+  'formatted_address',
+  'geometry',
+  'icon',
+  'name',
+  'permanently_closed',
+  'photo',
+  'place_id',
+  'plus_code',
+  'type',
+  'url',
+  'utc_offset',
+  'vicinity',
+  'formatted_phone_number',
+  'opening_hours',
+  'website',
+  'price_level',
+  'rating',
+  'review',
+  'user_ratings_total',
 ];
+
 const fieldsParam = fieldsList.join(',');
 
 // 🔹 Google Places Details abrufen
 async function fetchGooglePlaceData(placeId, language = 'de') {
   const apiKey = process.env.GOOGLE_API_KEY;
-  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=${fieldsParam}&language=${language}&key=${apiKey}`;
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(
+    placeId,
+  )}&fields=${fieldsParam}&language=${language}&key=${apiKey}`;
 
   console.log(`➡️  Abruf Place Details für: ${placeId}`);
   const response = await fetch(url);
   const data = await response.json();
 
   if (data.status !== 'OK') {
-    console.error(`⚠️ API Fehler: ${JSON.stringify(data)}`);
+    console.error(`⚠️ API Fehler bei Place Details ${placeId}: ${JSON.stringify(data)}`);
     throw new Error(`Fehler bei Place Details: ${data.status}`);
   }
 
@@ -37,7 +60,7 @@ async function fetchGooglePlaceData(placeId, language = 'de') {
 function extractKeys(obj, prefix = '') {
   let keys = [];
   for (const key in obj) {
-    if (!obj.hasOwnProperty(key)) continue;
+    if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
     const value = obj[key];
     const fullKey = prefix ? `${prefix}.${key}` : key;
 
@@ -69,26 +92,37 @@ function loadCategoryMap(path = 'data/place_categories.json') {
   try {
     const raw = fs.readFileSync(path, 'utf-8');
     const array = JSON.parse(raw);
-    return Object.fromEntries(array.map(entry => [entry.place_id, entry.category_id]));
+    // place_id -> category_id
+    return Object.fromEntries(array.map((entry) => [entry.place_id, entry.category_id]));
   } catch (err) {
     console.error(`❌ Fehler beim Laden von place_categories.json: ${err.message}`);
     return {};
   }
 }
 
+// 🔹 Cache für Attribute-Definitionen (key -> attribute_id)
+const attributeCache = new Map();
+
 // 🔹 attribute_id holen oder neu einfügen
 async function getOrInsertAttribute(key, input_type, category_id) {
+  if (!key) return null;
+
+  if (attributeCache.has(key)) {
+    return attributeCache.get(key);
+  }
+
   const { data, error } = await supabase
     .from('attribute_definitions')
     .select('attribute_id')
     .eq('key', key)
-    .single();
+    .maybeSingle();
 
   if (error && error.code !== 'PGRST116') {
     throw new Error(`❌ Fehler bei attribute_definitions (${key}): ${error.message}`);
   }
 
   if (data?.attribute_id) {
+    attributeCache.set(key, data.attribute_id);
     return data.attribute_id;
   }
 
@@ -101,7 +135,7 @@ async function getOrInsertAttribute(key, input_type, category_id) {
       name_de: key,
       description_de: '',
       input_type,
-      is_active: false
+      is_active: false,
     })
     .select('attribute_id')
     .single();
@@ -112,18 +146,23 @@ async function getOrInsertAttribute(key, input_type, category_id) {
   }
 
   console.log(`✅ Neues Attribut: ${key} (${input_type})`);
+  attributeCache.set(key, insertData.attribute_id);
   return insertData.attribute_id;
 }
 
 // 🔹 Link in attributes_meet_categories schreiben
 async function insertAttributeCategoryLink(attribute_id, category_id, place_id) {
+  if (!attribute_id || !category_id || !place_id) return;
+
   const { error } = await supabase
     .from('attributes_meet_categories')
     .insert([{ attribute_id, category_id, place_id }]);
 
   if (error && error.code !== '23505') {
-    // 23505 = unique violation (wird durch DB-Constraint abgefangen)
-    console.error(`⚠️ Link nicht gespeichert (${attribute_id}/${category_id}): ${error.message}`);
+    // 23505 = unique violation (DB-Constraint)
+    console.error(
+      `⚠️ Link nicht gespeichert (attr=${attribute_id}/cat=${category_id}/place=${place_id}): ${error.message}`,
+    );
   }
 }
 
@@ -146,7 +185,25 @@ async function scanAttributesFromJsonFile(jsonPath = 'data/place_ids_archive.jso
   }
 
   const categoryMap = loadCategoryMap('data/place_categories.json');
-  const placeIds = rawData.map(entry => typeof entry === 'string' ? entry : entry.placeId);
+
+  // Place IDs robust extrahieren + doppelte im Lauf vermeiden
+  const seenPlaceIds = new Set();
+  const placeIds = [];
+
+  for (const entry of rawData) {
+    const placeId =
+      typeof entry === 'string'
+        ? entry
+        : entry.place_id || entry.placeId || entry.id || entry.place || undefined;
+
+    if (!placeId) {
+      console.warn(`⚠️ Ungültiger Eintrag in Datei: ${JSON.stringify(entry)}`);
+      continue;
+    }
+    if (seenPlaceIds.has(placeId)) continue;
+    seenPlaceIds.add(placeId);
+    placeIds.push(placeId);
+  }
 
   for (const placeId of placeIds) {
     const category_id = categoryMap[placeId];
