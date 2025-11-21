@@ -1,1 +1,478 @@
-[]
+[
+  {
+    "placeId": "ChIJn7Etc5v6YUcRFrifc_zFdY4",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJ81MmJBPsYUcRn7p6nGjxVAY",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJ_69R4q_wYUcRh4qhr6KC1fY",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJk61RpsH7YUcR-5kKOPxqzYk",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJIwEk8fPrYUcR3mKJHzyYKTc",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJt6cBUZT6YUcR8ZDNrrznpvk",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJ-5D5oGb6YUcRPD7x8UOtU1M",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJ1UjF4Fz7YUcRjdlK7oq64-k",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJDeyg-GD2YUcRl1Zcj3wegtM",
+    "preferredName": "Petrol"
+  },
+  {
+    "placeId": "ChIJY7unGav7YUcReIpyZ5UpqRo",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJKxG-lsL6YUcRCM437LShzw0",
+    "preferredName": "Petrol"
+  },
+  {
+    "placeId": "ChIJ2zZonczlYUcRRheBwMHnHSc",
+    "preferredName": "Asmira Marine Fuel Station"
+  },
+  {
+    "placeId": "ChIJFSgmjzTxYUcRfpWS6Qe1Mjc",
+    "preferredName": "Adria Oil BP Zadar"
+  },
+  {
+    "placeId": "ChIJqTh9SpDkYUcRLKxn7pjdaAk",
+    "preferredName": "Petrol Station"
+  },
+  {
+    "placeId": "ChIJrcpbnG3lYUcRCGa2ChG4u48",
+    "preferredName": "Tri Bartola d.o.o."
+  },
+  {
+    "placeId": "ChIJ7agok7_1YUcR-S8VtclciEE",
+    "preferredName": "Petrol"
+  },
+  {
+    "placeId": "ChIJZ7lbGdnvYUcRA-gCRJdWsBk",
+    "preferredName": "Petrol"
+  },
+  {
+    "placeId": "ChIJwSjM74D7YUcRPhukhtycLXg",
+    "preferredName": "LPG kamp gas fill station"
+  },
+  {
+    "placeId": "ChIJDbuiwb7wYUcRXvSyU0Q_hfo",
+    "preferredName": "Shell"
+  },
+  {
+    "placeId": "ChIJv_fy-9jvYUcRmjfBmKpFUrI",
+    "preferredName": "Petrol Murvica West"
+  },
+  {
+    "placeId": "ChIJc1GVjvL6YUcR3xG7GqXhQZQ",
+    "preferredName": "Tri Bartola"
+  },
+  {
+    "placeId": "ChIJhYhwvLDoYUcR35hgTbVVkdI",
+    "preferredName": "Shell"
+  },
+  {
+    "placeId": "ChIJqQPyRObcYUcR3QiznKrNh2w",
+    "preferredName": "Crodux"
+  },
+  {
+    "placeId": "ChIJ9_D6vejcYUcRda_reFKsp6I",
+    "preferredName": "Petrol"
+  },
+  {
+    "placeId": "ChIJPye3q5HMNBMRQqaG9Hs7Pnw",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJ_XHbkVPaYUcRCCJQYS1NTws",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJN94FKlbbYUcRrRzKwg0bfTY",
+    "preferredName": "Asseria oil"
+  },
+  {
+    "placeId": "ChIJ9b1ZK27mYUcRpSHJ7Wlnqfg",
+    "preferredName": "Galovac Petrol"
+  },
+  {
+    "placeId": "ChIJg7uebZHeYUcRnsjhk_bpwkY",
+    "preferredName": "Šimun Oil"
+  },
+  {
+    "placeId": "ChIJd1c1tdbKNBMRkHbPhbaZbgk",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJ4WuydyjONBMR_D3IIZ6mVZc",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJTcAEls_KNBMRYvh-VdG4mdE",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJRZ12wLfPNBMRRt3WlBfQL3g",
+    "preferredName": "FLASH ENERGY"
+  },
+  {
+    "placeId": "ChIJv6bzB5rMNBMRZ-2TWL3vTcI",
+    "preferredName": "Petrol - Pakoštane"
+  },
+  {
+    "placeId": "ChIJD-XtYTnPNBMRA7l26PlNs08",
+    "preferredName": "Bootstankstelle"
+  },
+  {
+    "placeId": "ChIJO5oraADLNBMRQmypOYRgBLc",
+    "preferredName": "BOAT Gas Station"
+  },
+  {
+    "placeId": "ChIJd9ym72GsNBMR9f5NacQtX6c",
+    "preferredName": "B.P. Zaglav"
+  },
+  {
+    "placeId": "ChIJ7fJ3AW3RNBMRgaGZ_pZjlzQ",
+    "preferredName": "PI-NA"
+  },
+  {
+    "placeId": "ChIJ5QDxFrDUNBMRbZ6rGbGh40o",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJn45pO9XRNBMR2c7UsgT-iUU",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJD_skDQkrNRMR5Omh4YpGNZQ",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJgxVx26IlNRMRFij8JZ6tBYI",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJR1CNjPUlNRMR2DZvdm2rC-s",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJvc1SDAkrNRMRpRU0ynBhCWY",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJJSdAruPXNBMR4ySlN05RqQg",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJ1xn3dyMuNRMR3FBPa_oF3g8",
+    "preferredName": "Tromilja benzin"
+  },
+  {
+    "placeId": "ChIJKzfU_-glNRMRMhV1kNskKKA",
+    "preferredName": "Lukoil"
+  },
+  {
+    "placeId": "ChIJpwY2w5klNRMRk88UdnEWT2o",
+    "preferredName": "Petrol"
+  },
+  {
+    "placeId": "ChIJC1GnnsgoNRMRSwHfP4QSKug",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJhS88oP3XNBMR-dlA0iDie_c",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJk1OFhMgoNRMRnWJi0etYynk",
+    "preferredName": "Adria Oil d.o.o. BP ŠIBENIK"
+  },
+  {
+    "placeId": "ChIJVTMrG0UvNRMRRxfzTArWXUg",
+    "preferredName": "Petrol"
+  },
+  {
+    "placeId": "ChIJS4VWpEA6NRMRauIRjqNO_VY",
+    "preferredName": "Lukoil Vrpolje Primorsko - Sjever"
+  },
+  {
+    "placeId": "ChIJ58laO0E6NRMRilpbvvGaUqk",
+    "preferredName": "Lukoil - Vrpolje West"
+  },
+  {
+    "placeId": "ChIJU4P1d9EZNRMRBS0FdkZPkWg",
+    "preferredName": "Gas Station for Boats"
+  },
+  {
+    "placeId": "ChIJm-8ZFIYiNRMRpmNgJA_4TQs",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJnd9XRHIYNRMRQlAzTk-9vg8",
+    "preferredName": "Petrol"
+  },
+  {
+    "placeId": "ChIJU3MVEtdcNRMRIyMDh1LEGu4",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJFc5FBvBpNRMRhbekxvqcvK4",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJl4GEpv5pNRMR9-6DwHWh19Q",
+    "preferredName": "Benzin PERIĆ"
+  },
+  {
+    "placeId": "ChIJC8nk21FDNRMRbAnmIsmEnK0",
+    "preferredName": "Energy M"
+  },
+  {
+    "placeId": "ChIJqROrjfBdNRMRL6YmXemGpkA",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJY9dghyFqNRMRB8W8EgUIFPE",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJoYXbOrVvNRMRBT7aD817K1U",
+    "preferredName": "Benzinska postaja INA"
+  },
+  {
+    "placeId": "ChIJkyBUgT1qNRMR7WzAT6rjEvQ",
+    "preferredName": "Benzinska postaja, Tankstelle, Yachts Tankstelle, Boot Tankstelle, Boat Gas station"
+  },
+  {
+    "placeId": "ChIJBTH2NBZDNRMR6LOLhtLj_GI",
+    "preferredName": "Crodux"
+  },
+  {
+    "placeId": "ChIJdTuIMaxdNRMRAcf5XaLm74Y",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJDYijyVdnNRMRFbGL3mbLv2E",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJa7XWIdhCNRMRGLT4Qtu-wpI",
+    "preferredName": "LISANA KOMERC d.o.o Brešković gas"
+  },
+  {
+    "placeId": "ChIJaebMwh1DNRMRg13kfTJEAwc",
+    "preferredName": "Lisana Komerc d.o.o."
+  },
+  {
+    "placeId": "ChIJ1ZT0NkZZNRMRU9fpF7yoPzs",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJUz6aPkZZNRMRCrYgINamtJk",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJp6jeYQJeNRMR4zsHM2lJeto",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJC5BD4cxfNRMRu_8vr6l6lj4",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJPzAhyExeNRMR4yfjtiD7bFE",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJ5W9Cg8unShMRlp0B_WpLP7A",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJc2D2Nf5fNRMRXoxEFaFP7lY",
+    "preferredName": "Tifon"
+  },
+  {
+    "placeId": "ChIJwVQlCBpeNRMRsylXdkxXWb0",
+    "preferredName": "Ina Plokite"
+  },
+  {
+    "placeId": "ChIJLTTJOYJeNRMRvsA6AFYLzIk",
+    "preferredName": "Benzin Perić"
+  },
+  {
+    "placeId": "ChIJMdZrEBWnShMRyxO6N55j43U",
+    "preferredName": "Petrol"
+  },
+  {
+    "placeId": "ChIJseONtFZeNRMRBohKPzIWlWA",
+    "preferredName": "Ina"
+  },
+  {
+    "placeId": "ChIJoczKxBJeNRMR_vVVjpMuzGw",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJ4eb9-BJeNRMRMGrex6ci9PQ",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJj6nFXJ-dShMRJD1Or9HCc2M",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJVY9wZ6FfNRMRQzhew-shUdw",
+    "preferredName": "Lukoil"
+  },
+  {
+    "placeId": "ChIJdTJ55BJeNRMR45fK-bE-L1w",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJn0qtu1ReNRMRe4R6dQdOEew",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJlWRXxMxfNRMRIe8vx7d17D4",
+    "preferredName": "Ina Plin"
+  },
+  {
+    "placeId": "ChIJM0jf3DtfNRMRMJWTv_AA00I",
+    "preferredName": "NORMA d.o.o."
+  },
+  {
+    "placeId": "ChIJ8dR41xBdNRMR6lNulJxbYjg",
+    "preferredName": "Petrol"
+  },
+  {
+    "placeId": "ChIJiY4ZyvZCNRMRNJe2G8xbg3A",
+    "preferredName": "Shell"
+  },
+  {
+    "placeId": "ChIJU5W0XtiYShMRG5jasPMYNJg",
+    "preferredName": "Eurotank"
+  },
+  {
+    "placeId": "ChIJn0oKSwOnShMRooniQYD9OCQ",
+    "preferredName": "Shell"
+  },
+  {
+    "placeId": "ChIJzQID8mleNRMRCT4XX64Gmdk",
+    "preferredName": "Petrol"
+  },
+  {
+    "placeId": "ChIJczICN1qYShMRUg0rzrLC3Jo",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJgf7yN1qYShMROUl9WxCLZ28",
+    "preferredName": "LPG"
+  },
+  {
+    "placeId": "ChIJQ2NwMZ18NRMRDAtJgHM2mHI",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJgy4Xoz2EShMR3BGHszBils8",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJ98E1MNOYShMRVQwtKyokriQ",
+    "preferredName": "MOŠUNJ D.O.O."
+  },
+  {
+    "placeId": "ChIJmQHsHwB_ShMRBi3BoifW84k",
+    "preferredName": "Shell"
+  },
+  {
+    "placeId": "ChIJl4H5KXl9ShMRvVSkJ41AH0M",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJCQAEhneHShMR2RgV3GoALB8",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJL0-uZ4KBNRMR4WpLaJVwh8M",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJU79NEKtRShMR2sUTi-DEXrE",
+    "preferredName": "Eurotank"
+  },
+  {
+    "placeId": "ChIJDcGeft9RShMROIFcut_W5Hg",
+    "preferredName": "Gasolinera para barcos (pantalán)"
+  },
+  {
+    "placeId": "ChIJ2waoKy1QShMR24s8dJXVhus",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJJ3yD_NZTShMRHShQeNb2Ge4",
+    "preferredName": "\"BP Orebić\" Ravlić ltd petrol station"
+  },
+  {
+    "placeId": "ChIJv97VmNtxShMRnkiFE0PVD40",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJZwmkvY9pShMRmHQGhi2J_7I",
+    "preferredName": "REPAK Gasoline Station"
+  },
+  {
+    "placeId": "ChIJQZKjZQmtSxMRl3sZ6xl184c",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJPb4NwQIBSxMRKH-H3zQMrzE",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJo01ES2i_SxMR1tXo_QSIZ20",
+    "preferredName": "Komunalno Mljet d.o.o. BP SOBRA"
+  },
+  {
+    "placeId": "ChIJmyeomTiXSxMRVX0YHCnU27o",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJ1RM5_hOLSxMRwMiKUOX0hJ0",
+    "preferredName": "Crodux"
+  },
+  {
+    "placeId": "ChIJwXVMLQCRSxMR9yTKsrnIOlY",
+    "preferredName": "Tifon"
+  },
+  {
+    "placeId": "ChIJHUVrQjp1TBMRUMJvFG7M0fI",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJFVv6fI50TBMRuvY3py5kMqg",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJe66K4I90TBMRh8wPyGwMGD8",
+    "preferredName": "INA"
+  },
+  {
+    "placeId": "ChIJ2cTAlIR0TBMRGHitl6j6Fqk",
+    "preferredName": "Ina"
+  }
+]
