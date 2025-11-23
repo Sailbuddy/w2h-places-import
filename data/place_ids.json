@@ -1,4 +1,6 @@
-[    "ChIJiYrFKoVle0cRbb55yeO2dJA",
+{
+  "place_ids": [
+    "ChIJiYrFKoVle0cRbb55yeO2dJA",
     "ChIJAdoe74ybfEcR7kWwZaDd7xQ",
     "ChIJy7ysk1uZfEcRo2mXmGPJ6YY",
     "ChIJ6f94mNqZfEcRb4bfZFcSCLI",
@@ -10,4 +12,6 @@
     "ChIJ4T9EXNfNfEcRvCD5M3Kx-iI",
     "ChIJA5Tv8_zSfEcR_T0ZXCjcTDQ",
     "ChIJmQ9GEInkiiYRxMXhFqB9WTY",
-    "ChIJZxJL3a_TfEcRZhzd8WZvEC8"]
+    "ChIJZxJL3a_TfEcRZhzd8WZvEC8"
+  ]
+}
