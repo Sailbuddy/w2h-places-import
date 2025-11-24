@@ -480,7 +480,7 @@
     "placeId": "ChIJ1xAbWyKZfEcRjvPLJ9RwC9w",
     "preferredName": "Aldo Commerce"
   },
-    {
+  {
     "placeId": "ChIJ1x0q_PabfEcR-3qaYz7p8PQ",
     "preferredName": "Crodux"
   },
@@ -580,7 +580,7 @@
     "placeId": "ChIJcVvwQIcrY0cRhMyzS_ar7qA",
     "preferredName": "Petrol Station Flash, za brodove (boats)"
   },
-    {
+  {
     "placeId": "ChIJCW6iDlHNfEcRepZQ0ZRjSPs",
     "preferredName": "INA"
   },
@@ -2332,7 +2332,7 @@
     "placeId": "ChIJ6zkLUssKTBMR5xkcu4uhhE4",
     "preferredName": "Zavod za javno zdravstvo Dubrovačko-neretvanske županije"
   },
-    {
+  {
     "placeId": "ChIJiYrFKoVle0cRbb55yeO2dJA",
     "preferredName": "Porting, gradbeništvo, trgovina in turizem, d.o.o"
   },
@@ -2384,7 +2384,7 @@
     "placeId": "ChIJZxJL3a_TfEcRZhzd8WZvEC8",
     "preferredName": "Marina Polesana Pula"
   },
-   {
+  {
     "placeId": "",
     "preferredName": "ACI Marina Umag"
   },
@@ -2451,5 +2451,10 @@
   {
     "placeId": "",
     "preferredName": "ACI Marina Dubrovnik"
+  },
+  {
+    "placeId": "ChIJP1HBEgA9ZxMRmVSgBCdXETc",
+    "preferredName": null,
+    "addedAt": "2025-11-24T11:54:49.901Z"
   }
 ]
