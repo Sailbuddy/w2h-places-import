@@ -1,1 +1,296 @@
-[]
+[{
+    "placeId": "ChIJDQG3cx99e0cRElbOC9MyY58",
+    "preferredName": "ACI Marina Umag",
+    "sourceQuery": "ACI Marina Umag, Umag, Croatia"
+  },
+  {
+    "placeId": "ChIJTYs8zIybfEcRK60a7ZMDE1o",
+    "preferredName": "Marina Nautica Novigrad Nautica",
+    "sourceQuery": "Marina Nautica Novigrad, Novigrad, Croatia"
+  },
+  {
+    "placeId": "ChIJy7ysk1uZfEcRo2mXmGPJ6YY",
+    "preferredName": "Marina Cervar Porat",
+    "sourceQuery": "Marina Cervar Porat, Červar Porat, Croatia"
+  },
+  {
+    "placeId": "ChIJG72Jfp6XfEcRyjI2yeDqm18",
+    "preferredName": "Marina Porec",
+    "sourceQuery": "Marina Poreč, Poreč, Croatia"
+  },
+  {
+    "placeId": "ChIJe6tGwVSWfEcRKZkJVn03q-I",
+    "preferredName": "Marina Parentium Porec",
+    "sourceQuery": "Marina Parentium, Poreč, Croatia"
+  },
+  {
+    "placeId": "ChIJc6mIKxmXfEcRR_Gy6LlrseA",
+    "preferredName": "Marina Funtana",
+    "sourceQuery": "Marina Funtana, Funtana, Croatia"
+  },
+  {
+    "placeId": "ChIJ1StpMPKVfEcRu2p7cmn8-KU",
+    "preferredName": "Marina Vrsar",
+    "sourceQuery": "Marina Vrsar, Vrsar, Croatia"
+  },
+  {
+    "placeId": "ChIJY60OfUq-fEcRhKVFechvdfM",
+    "preferredName": "Marina Valalta",
+    "sourceQuery": "Marina Valalta, Valalta, Rovinj, Croatia"
+  },
+  {
+    "placeId": "ChIJ_yy5qprAfEcRVmWc_EEUFyg",
+    "preferredName": "ACI Marina Rovinj",
+    "sourceQuery": "ACI Marina Rovinj, Rovinj, Croatia"
+  },
+  {
+    "placeId": "ChIJb1QAXuHSfEcR4A3BlUQn9Dc",
+    "preferredName": "ACI Marina Pula",
+    "sourceQuery": "ACI Marina Pula, Pula, Croatia"
+  },
+  {
+    "placeId": "ChIJIzUcr1vTfEcRme3hdluFHrc",
+    "preferredName": "Tehnomont Marina Veruda",
+    "sourceQuery": "Tehnomont Marina Veruda, Veruda, Pula, Croatia"
+  },
+  {
+    "placeId": "ChIJGRhYtoErY0cRGbtl8449VG0",
+    "preferredName": "ACI Marina Pomer",
+    "sourceQuery": "ACI Marina Pomer, Pomer, Croatia"
+  },
+  {
+    "placeId": "ChIJbS4wL34UY0cRVbDhNQbnCfk",
+    "preferredName": "ACI Marina Cres",
+    "sourceQuery": "ACI Marina Cres, Cres, Croatia"
+  },
+  {
+    "placeId": "ChIJ-fjtmwSoZEcR-OZX705Jwzw",
+    "preferredName": "ACI Marina Opatija",
+    "sourceQuery": "ACI Marina Opatija, Opatija, Croatia"
+  },
+  {
+    "placeId": "ChIJ1ym8W3OoZEcRcYwmVJ665ZI",
+    "preferredName": "Marina Admiral Opatija",
+    "sourceQuery": "Marina Admiral, Opatija, Croatia"
+  },
+  {
+    "placeId": "ChIJ6SZKFP95Y0cR8zK-0fHlkE4",
+    "preferredName": "Marina Novi",
+    "sourceQuery": "Marina Novi, Novi Vinodolski, Croatia"
+  },
+  {
+    "placeId": "ChIJT74ijHt4Y0cRq8AqmBD8mqE",
+    "preferredName": "Marina Mitan",
+    "sourceQuery": "Marina Mitan, Novi Vinodolski, Croatia"
+  },
+  {
+    "placeId": "ChIJC23vadpzY0cRJ6xH2YapiDs",
+    "preferredName": "Marina Punat",
+    "sourceQuery": "Marina Punat, Punat, Krk, Croatia"
+  },
+  {
+    "placeId": "ChIJ8-wpuvinY0cRQo5eNl8qhog",
+    "preferredName": "ACI Marina Supetarska Draga",
+    "sourceQuery": "ACI Marina Supetarska Draga, Supetarska Draga, Rab, Croatia"
+  },
+  {
+    "placeId": "ChIJU3iXYU2uY0cRKaHBz8b2qyg",
+    "preferredName": "ACI Marina Rab",
+    "sourceQuery": "ACI Marina Rab, Rab, Croatia"
+  },
+  {
+    "placeId": "ChIJTXHFIcv5YkcRYf4XBTbeG0g",
+    "preferredName": "Marina Mali Losinj",
+    "sourceQuery": "Marina Mali Lošinj, Mali Lošinj, Croatia"
+  },
+  {
+    "placeId": "ChIJ15axJGc3YkcR_cp1tRzWt9U",
+    "preferredName": "ACI Marina Simuni",
+    "sourceQuery": "ACI Marina Šimuni, Šimuni, Pag, Croatia"
+  },
+  {
+    "placeId": "ChIJjzoBbqnwYUcRAsgIwJBWSaU",
+    "preferredName": "Marina Borik",
+    "sourceQuery": "Marina Borik, Borik, Zadar, Croatia"
+  },
+  {
+    "placeId": "ChIJPxbUZ3H6YUcR3UDrlLh2SuA",
+    "preferredName": "Marina Zadar",
+    "sourceQuery": "Marina Zadar, Zadar, Croatia"
+  },
+  {
+    "placeId": "ChIJpWpy2lYOYkcR5fMsfzdikO4",
+    "preferredName": "Marina Veli Rat / Dugi Otok",
+    "sourceQuery": "Marina Veli Rat, Veli Rat, Dugi Otok, Croatia"
+  },
+  {
+    "placeId": "ChIJ7--wxXf5YUcRwmVwPFl9RUI",
+    "preferredName": "Olive Island Marina / Ugljan",
+    "sourceQuery": "Olive Island Marina, Sutomišćica, Ugljan, Croatia"
+  },
+  {
+    "placeId": "ChIJT_0AB8j7YUcRbC-gVE9Fliw",
+    "preferredName": "Marina Preko / Ugljan",
+    "sourceQuery": "Marina Preko, Preko, Ugljan, Croatia"
+  },
+  {
+    "placeId": "ChIJITeeNonkYUcR8KoAcIyeOHA",
+    "preferredName": "Marina Dalmacija",
+    "sourceQuery": "Marina Dalmacija, Bibinje-Sukošan, Croatia"
+  },
+  {
+    "placeId": "ChIJhb6IBd_-YUcRfowbnjXhf7o",
+    "preferredName": "Marina Veli Iz",
+    "sourceQuery": "Marina Veli Iž, Veli Iž, Croatia"
+  },
+  {
+    "placeId": "ChIJnQhKY9HKNBMRvJtpnz97c4g",
+    "preferredName": "Marina Kornati Biograd",
+    "sourceQuery": "Marina Kornati, Biograd na Moru, Croatia"
+  },
+  {
+    "placeId": "ChIJv5-Iy9rKNBMRlCm1jHrI2h0",
+    "preferredName": "Marina Sangulin",
+    "sourceQuery": "Marina Šangulin, Biograd na Moru, Croatia"
+  },
+  {
+    "placeId": "ChIJ_1q4wWixNBMRjrTvgO5MtVg",
+    "preferredName": "ACI Marina Zut",
+    "sourceQuery": "ACI Marina Žut, Žut, Croatia"
+  },
+  {
+    "placeId": "ChIJiVbDOhe5NBMR6a07Ie84dFw",
+    "preferredName": "ACI Marina Piskera",
+    "sourceQuery": "ACI Marina Piškera, Piškera, Croatia"
+  },
+  {
+    "placeId": "ChIJ_zNQRSfONBMRFr1RKXTm3K4",
+    "preferredName": "Marina Hramina",
+    "sourceQuery": "Marina Hramina, Murter-Hramina, Croatia"
+  },
+  {
+    "placeId": "ChIJvwAzhNvRNBMRo7TW4LKSn20",
+    "preferredName": "Marina Betina",
+    "sourceQuery": "Marina Betina, Betina, Murter, Croatia"
+  },
+  {
+    "placeId": "ChIJ79QvJ4rQNBMRF1oDdZP8X6c",
+    "preferredName": "ACI Marina Jezera",
+    "sourceQuery": "ACI Marina Jezera, Jezera, Murter, Croatia"
+  },
+  {
+    "placeId": "ChIJMRT3-IfXNBMRdQL0u6a-7jU",
+    "preferredName": "Marina Tribunj",
+    "sourceQuery": "Marina Tribunj, Tribunj, Croatia"
+  },
+  {
+    "placeId": "ChIJr5HgX_vXNBMROLJgHIG9eQg",
+    "preferredName": "ACI Marina Vodice",
+    "sourceQuery": "ACI Marina Vodice, Vodice, Croatia"
+  },
+  {
+    "placeId": "ChIJTyQ0ETMsNRMRTJ9NKi_Mos4",
+    "preferredName": "ACI Marina Skradin",
+    "sourceQuery": "ACI Marina Skradin, Skradin, Croatia"
+  },
+  {
+    "placeId": "ChIJQQunXZMlNRMRdR1D1nLy0p0",
+    "preferredName": "Marina Mandalina",
+    "sourceQuery": "D-Marin Mandalina, Šibenik, Croatia"
+  },
+  {
+    "placeId": "ChIJ2y_6EtUlNRMRDjxmY9MW8yY",
+    "preferredName": "Yacht Marina Solaris",
+    "sourceQuery": "Amadria Yacht Marina Solaris, Šibenik, Croatia"
+  },
+  {
+    "placeId": "ChIJO3Z6JRsZNRMRz5bSsC0NjYU",
+    "preferredName": "Kremik Marina Primosten",
+    "sourceQuery": "Marina Kremik, Primošten, Croatia"
+  },
+  {
+    "placeId": "ChIJ-xR3k9EZNRMR_F115RkHQUE",
+    "preferredName": "Marina Frapa",
+    "sourceQuery": "Marina Frapa, Rogoznica, Croatia"
+  },
+  {
+    "placeId": "ChIJ8e1Nn_8UNRMRQ9fhpo2xBXA",
+    "preferredName": "Marina Agana",
+    "sourceQuery": "Marina Agana, Marina, Croatia"
+  },
+  {
+    "placeId": "ChIJzz-1tiFqNRMRjt7rQdIV0iY",
+    "preferredName": "ACI Marina Trogir",
+    "sourceQuery": "ACI Marina Trogir, Trogir, Croatia"
+  },
+  {
+    "placeId": "ChIJ-1bzBK1dNRMRShYpx9IbkjM",
+    "preferredName": "Marina Kastela",
+    "sourceQuery": "Marina Kaštela, Kaštel Gomilica, Croatia"
+  },
+  {
+    "placeId": "ChIJAf6WhFdnNRMR9J8t7mJ3Gt0",
+    "preferredName": "ACI Marina Split",
+    "sourceQuery": "ACI Marina Split, Split, Croatia"
+  },
+  {
+    "placeId": "ChIJIwEmOfNdNRMRFztUT9lCtkU",
+    "preferredName": "Marina Spinut Split",
+    "sourceQuery": "Marina Spinut, Split, Croatia"
+  },
+  {
+    "placeId": "ChIJ1ci1LQCgShMRf_ZK84vCZTg",
+    "preferredName": "Marina Lav",
+    "sourceQuery": "Marina Lav, Podstrana, Croatia"
+  },
+  {
+    "placeId": "ChIJJzShX6nrShMRyPa0PW8LRQc",
+    "preferredName": "Marina Brela",
+    "sourceQuery": "Marina Brela, Brela, Croatia"
+  },
+  {
+    "placeId": "ChIJQVAUN2PrShMR2VM3lO5mHzA",
+    "preferredName": "Marina Baska Voda",
+    "sourceQuery": "Marina Baška Voda, Baška Voda, Croatia"
+  },
+  {
+    "placeId": "ChIJR7grrNXvShMRsyGNfiu0UxM",
+    "preferredName": "Marina Tucepi",
+    "sourceQuery": "Marina Tučepi, Tučepi, Croatia"
+  },
+  {
+    "placeId": "ChIJCZKKzpt8NRMRJAPN8fM7GP4",
+    "preferredName": "ACI Marina Milna",
+    "sourceQuery": "ACI Marina Milna, Milna, Brač, Croatia"
+  },
+  {
+    "placeId": "ChIJDXUmynCHShMR5KRHjvEJrDU",
+    "preferredName": "ACI Marina Vrboska",
+    "sourceQuery": "ACI Marina Vrboska, Vrboska, Hvar, Croatia"
+  },
+  {
+    "placeId": "ChIJw9S89CmCNRMRJyj3T_fOv6M",
+    "preferredName": "ACI Marina Palmizana",
+    "sourceQuery": "ACI Marina Palmižana, Palmižana, Pakleni Islands, Croatia"
+  },
+  {
+    "placeId": "ChIJ24058ZhRShMRXQokzVDOYiM",
+    "preferredName": "Marina Orebic",
+    "sourceQuery": "Marina Orebić, Orebić, Croatia"
+  },
+  {
+    "placeId": "ChIJi7kXfSVQShMRcVb9DfKN7SM",
+    "preferredName": "ACI Marina Korcula",
+    "sourceQuery": "ACI Marina Korčula, Korčula, Croatia"
+  },
+  {
+    "placeId": "ChIJyYCfrkFOShMReN59xK_sdqc",
+    "preferredName": "Marina Lumbarda",
+    "sourceQuery": "Marina Lumbarda, Lumbarda, Korčula, Croatia"
+  },
+  {
+    "placeId": "ChIJlTHvfI50TBMR7rHnY3U4r28",
+    "preferredName": "ACI Marina Dubrovnik",
+    "sourceQuery": "ACI Marina Dubrovnik, Komolac, Dubrovnik, Croatia"
+  }
+]
