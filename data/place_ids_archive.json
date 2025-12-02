@@ -2761,5 +2761,680 @@
     "placeId": "ChIJlTHvfI50TBMR7rHnY3U4r28",
     "preferredName": "ACI Marina Dubrovnik",
     "sourceQuery": "ACI Marina Dubrovnik, Komolac, Dubrovnik, Croatia"
+  },
+  {
+    "placeId": "ChIJdwPWkgWeZEcRdKIw0E-_9E0",
+    "preferredName": "LI Bakar",
+    "sourceQuery": "Harbourmaster's Office Bakar Croatia",
+    "city": "Bakar",
+    "office_code": "LI Bakar",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJjT_4h8efY0cRZbUiYXxLY9w",
+    "preferredName": "LI Baška",
+    "sourceQuery": "Harbourmaster's Office Baška Croatia",
+    "city": "Baška",
+    "office_code": "LI Baška",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LI Biograd na Moru",
+    "sourceQuery": "Harbourmaster's Office Biograd na Moru Croatia",
+    "city": "Biograd na Moru",
+    "office_code": "LI Biograd na Moru",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJ4XTSR2R9ShMRl6u9MuSvmdI",
+    "preferredName": "LI Bol",
+    "sourceQuery": "Harbourmaster's Office Bol Croatia",
+    "city": "Bol",
+    "office_code": "LI Bol",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJI48imckFYkcR4-yBRk_H8CE",
+    "preferredName": "LI Božava",
+    "sourceQuery": "Harbourmaster's Office Božava Croatia",
+    "city": "Božava",
+    "office_code": "LI Božava",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJFzS5Br4NTBMR3ywfD0ELZYI",
+    "preferredName": "LI Cavtat",
+    "sourceQuery": "Harbourmaster's Office Cavtat Croatia",
+    "city": "Cavtat",
+    "office_code": "LI Cavtat",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LI Cres",
+    "sourceQuery": "Harbourmaster's Office Cres Croatia",
+    "city": "Cres",
+    "office_code": "LI Cres",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJRVBQ8OOgZEcRm3kEt9uLylg",
+    "preferredName": "LI Crikvenica",
+    "sourceQuery": "Harbourmaster's Office Crikvenica Croatia",
+    "city": "Crikvenica",
+    "office_code": "LI Crikvenica",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJ4XTSR2R9ShMRl6u9MuSvmdI",
+    "preferredName": "LI Hvar",
+    "sourceQuery": "Harbourmaster's Office Hvar Croatia",
+    "city": "Hvar",
+    "office_code": "LI Hvar",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LI Ist",
+    "sourceQuery": "Harbourmaster's Office Ist Croatia",
+    "city": "Ist",
+    "office_code": "LI Ist",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LI Jablanac",
+    "sourceQuery": "Harbourmaster's Office Jablanac Croatia",
+    "city": "Jablanac",
+    "office_code": "LI Jablanac",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJ4XTSR2R9ShMRl6u9MuSvmdI",
+    "preferredName": "LI Jelsa",
+    "sourceQuery": "Harbourmaster's Office Jelsa Croatia",
+    "city": "Jelsa",
+    "office_code": "LI Jelsa",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJ244xQAwzYkcROFqgTEZem_A",
+    "preferredName": "LI Karlobag",
+    "sourceQuery": "Harbourmaster's Office Karlobag Croatia",
+    "city": "Karlobag",
+    "office_code": "LI Karlobag",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LI Kaštela",
+    "sourceQuery": "Harbourmaster's Office Kaštela Croatia",
+    "city": "Kaštela",
+    "office_code": "LI Kaštela",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJawXUDhy9NRMRSV6TxNS0k-U",
+    "preferredName": "LI Komiža",
+    "sourceQuery": "Harbourmaster's Office Komiža Croatia",
+    "city": "Komiža",
+    "office_code": "LI Komiža",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJeb_iwjpQShMRBsFvzy0on30",
+    "preferredName": "LI Korčula",
+    "sourceQuery": "Harbourmaster's Office Korčula Croatia",
+    "city": "Korčula",
+    "office_code": "LI Korčula",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJRVBQ8OOgZEcRm3kEt9uLylg",
+    "preferredName": "LI Kraljevica",
+    "sourceQuery": "Harbourmaster's Office Kraljevica Croatia",
+    "city": "Kraljevica",
+    "office_code": "LI Kraljevica",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJRVBQ8OOgZEcRm3kEt9uLylg",
+    "preferredName": "LI Krk",
+    "sourceQuery": "Harbourmaster's Office Krk Croatia",
+    "city": "Krk",
+    "office_code": "LI Krk",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LI Lastovo",
+    "sourceQuery": "Harbourmaster's Office Lastovo Croatia",
+    "city": "Lastovo",
+    "office_code": "LI Lastovo",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LI Lopar",
+    "sourceQuery": "Harbourmaster's Office Lopar Croatia",
+    "city": "Lopar",
+    "office_code": "LI Lopar",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJN1zQcgDvShMRwWE0bymUyio",
+    "preferredName": "LI Makarska",
+    "sourceQuery": "Harbourmaster's Office Makarska Croatia",
+    "city": "Makarska",
+    "office_code": "LI Makarska",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJTXHFIcv5YkcRYf4XBTbeG0g",
+    "preferredName": "LI Mali Lošinj",
+    "sourceQuery": "Harbourmaster's Office Mali Lošinj Croatia",
+    "city": "Mali Lošinj",
+    "office_code": "LI Mali Lošinj",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJRVBQ8OOgZEcRm3kEt9uLylg",
+    "preferredName": "LI Malinska",
+    "sourceQuery": "Harbourmaster's Office Malinska Croatia",
+    "city": "Malinska",
+    "office_code": "LI Malinska",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJmcOAOSl1TBMR7X-JXeszYdk",
+    "preferredName": "LI Metković",
+    "sourceQuery": "Harbourmaster's Office Metković Croatia",
+    "city": "Metković",
+    "office_code": "LI Metković",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LI Milna",
+    "sourceQuery": "Harbourmaster's Office Milna Croatia",
+    "city": "Milna",
+    "office_code": "LI Milna",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJRVBQ8OOgZEcRm3kEt9uLylg",
+    "preferredName": "LI Mošćenička Draga",
+    "sourceQuery": "Harbourmaster's Office Mošćenička Draga Croatia",
+    "city": "Mošćenička Draga",
+    "office_code": "LI Mošćenička Draga",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJOYoL_tjRNBMRV1oKi4BaSWU",
+    "preferredName": "LI Murter",
+    "sourceQuery": "Harbourmaster's Office Murter Croatia",
+    "city": "Murter",
+    "office_code": "LI Murter",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJ2XASRi5KYkcRxsVseFtf4Dw",
+    "preferredName": "LI Novalja",
+    "sourceQuery": "Harbourmaster's Office Novalja Croatia",
+    "city": "Novalja",
+    "office_code": "LI Novalja",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJ6SZKFP95Y0cR8zK-0fHlkE4",
+    "preferredName": "LI Novi Vinodolski",
+    "sourceQuery": "Harbourmaster's Office Novi Vinodolski Croatia",
+    "city": "Novi Vinodolski",
+    "office_code": "LI Novi Vinodolski",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJRVBQ8OOgZEcRm3kEt9uLylg",
+    "preferredName": "LI Novigrad",
+    "sourceQuery": "Harbourmaster's Office Novigrad Croatia",
+    "city": "Novigrad",
+    "office_code": "LI Novigrad",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LI Omiš",
+    "sourceQuery": "Harbourmaster's Office Omiš Croatia",
+    "city": "Omiš",
+    "office_code": "LI Omiš",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJRVBQ8OOgZEcRm3kEt9uLylg",
+    "preferredName": "LI Omišalj",
+    "sourceQuery": "Harbourmaster's Office Omišalj Croatia",
+    "city": "Omišalj",
+    "office_code": "LI Omišalj",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJ2YXuI3eoZEcRIOTYKlWohYc",
+    "preferredName": "LI Opatija",
+    "sourceQuery": "Harbourmaster's Office Opatija Croatia",
+    "city": "Opatija",
+    "office_code": "LI Opatija",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJ07_hXaU6YkcRxbJhX6qal-Q",
+    "preferredName": "LI Pag",
+    "sourceQuery": "Harbourmaster's Office Pag Croatia",
+    "city": "Pag",
+    "office_code": "LI Pag",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LI Pašman",
+    "sourceQuery": "Harbourmaster's Office Pašman Croatia",
+    "city": "Pašman",
+    "office_code": "LI Pašman",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJy762ej3RNBMRAqt5iW8bv7M",
+    "preferredName": "LI Pirovac",
+    "sourceQuery": "Harbourmaster's Office Pirovac Croatia",
+    "city": "Pirovac",
+    "office_code": "LI Pirovac",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LI Podgora",
+    "sourceQuery": "Harbourmaster's Office Podgora Croatia",
+    "city": "Podgora",
+    "office_code": "LI Podgora",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJUQaiG3KXfEcRKkkrkNtGQnQ",
+    "preferredName": "LI Poreč",
+    "sourceQuery": "Harbourmaster's Office Poreč Croatia",
+    "city": "Poreč",
+    "office_code": "LI Poreč",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LI Posedarje",
+    "sourceQuery": "Harbourmaster's Office Posedarje Croatia",
+    "city": "Posedarje",
+    "office_code": "LI Posedarje",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJf4ukc-HSfEcRw9MvpAt2Dwo",
+    "preferredName": "LI Pula",
+    "sourceQuery": "Harbourmaster's Office Pula Croatia",
+    "city": "Pula",
+    "office_code": "LI Pula",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJ72hSkHavY0cRPZiSFCb4d24",
+    "preferredName": "LI Rab",
+    "sourceQuery": "Harbourmaster's Office Rab Croatia",
+    "city": "Rab",
+    "office_code": "LI Rab",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJRVBQ8OOgZEcRm3kEt9uLylg",
+    "preferredName": "LI Raša",
+    "sourceQuery": "Harbourmaster's Office Raša Croatia",
+    "city": "Raša",
+    "office_code": "LI Raša",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LI Rogač",
+    "sourceQuery": "Harbourmaster's Office Rogač Croatia",
+    "city": "Rogač",
+    "office_code": "LI Rogač",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJEU2W44PAfEcRuRavMUiYsuM",
+    "preferredName": "LI Rovinj",
+    "sourceQuery": "Harbourmaster's Office Rovinj Croatia",
+    "city": "Rovinj",
+    "office_code": "LI Rovinj",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LI Sali",
+    "sourceQuery": "Harbourmaster's Office Sali Croatia",
+    "city": "Sali",
+    "office_code": "LI Sali",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJRVBQ8OOgZEcRm3kEt9uLylg",
+    "preferredName": "LI Senj",
+    "sourceQuery": "Harbourmaster's Office Senj Croatia",
+    "city": "Senj",
+    "office_code": "LI Senj",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJcycs9fUlNRMRAe8e1t1cix8",
+    "preferredName": "LI Sibenik",
+    "sourceQuery": "Harbourmaster's Office Sibenik Croatia",
+    "city": "Sibenik",
+    "office_code": "LI Sibenik",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJtdBPrJPkYUcR7XFRYVI8oOA",
+    "preferredName": "LI Sukošan",
+    "sourceQuery": "Harbourmaster's Office Sukošan Croatia",
+    "city": "Sukošan",
+    "office_code": "LI Sukošan",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJD1dUv56AShMRz9CdzY8v6NQ",
+    "preferredName": "LI Stari Grad",
+    "sourceQuery": "Harbourmaster's Office Stari Grad Croatia",
+    "city": "Stari Grad",
+    "office_code": "LI Stari Grad",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJD1dUv56AShMRz9CdzY8v6NQ",
+    "preferredName": "LI Starigrad",
+    "sourceQuery": "Harbourmaster's Office Starigrad Croatia",
+    "city": "Starigrad",
+    "office_code": "LI Starigrad",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LI Ston",
+    "sourceQuery": "Harbourmaster's Office Ston Croatia",
+    "city": "Ston",
+    "office_code": "LI Ston",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LI Sumartin",
+    "sourceQuery": "Harbourmaster's Office Sumartin Croatia",
+    "city": "Sumartin",
+    "office_code": "LI Sumartin",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LI Supetar",
+    "sourceQuery": "Harbourmaster's Office Supetar Croatia",
+    "city": "Supetar",
+    "office_code": "LI Supetar",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJmefM5RjxYkcRI88yk4MwDDI",
+    "preferredName": "LI Susak",
+    "sourceQuery": "Harbourmaster's Office Susak Croatia",
+    "city": "Susak",
+    "office_code": "LI Susak",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LI Sućuraj",
+    "sourceQuery": "Harbourmaster's Office Sućuraj Croatia",
+    "city": "Sućuraj",
+    "office_code": "LI Sućuraj",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJFxgDRyyZY0cRuChPc17pj6U",
+    "preferredName": "LI Sveti Juraj",
+    "sourceQuery": "Harbourmaster's Office Sveti Juraj Croatia",
+    "city": "Sveti Juraj",
+    "office_code": "LI Sveti Juraj",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJ1xT14VfQNBMRHHDfb9eI140",
+    "preferredName": "LI Tisno",
+    "sourceQuery": "Harbourmaster's Office Tisno Croatia",
+    "city": "Tisno",
+    "office_code": "LI Tisno",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LI Trogir",
+    "sourceQuery": "Harbourmaster's Office Trogir Croatia",
+    "city": "Trogir",
+    "office_code": "LI Trogir",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJ6xsD8llVShMRPT5-5MuWwlg",
+    "preferredName": "LI Trpanj",
+    "sourceQuery": "Harbourmaster's Office Trpanj Croatia",
+    "city": "Trpanj",
+    "office_code": "LI Trpanj",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LI Trstenik",
+    "sourceQuery": "Harbourmaster's Office Trstenik Croatia",
+    "city": "Trstenik",
+    "office_code": "LI Trstenik",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJsZZ_fY19e0cRW5wlZkVHlhg",
+    "preferredName": "LI Umag",
+    "sourceQuery": "Harbourmaster's Office Umag Croatia",
+    "city": "Umag",
+    "office_code": "LI Umag",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LI Vela Luka",
+    "sourceQuery": "Harbourmaster's Office Vela Luka Croatia",
+    "city": "Vela Luka",
+    "office_code": "LI Vela Luka",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LI Vis",
+    "sourceQuery": "Harbourmaster's Office Vis Croatia",
+    "city": "Vis",
+    "office_code": "LI Vis",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJp0Qww_vXNBMRddl7N-MDobc",
+    "preferredName": "LI Vodice",
+    "sourceQuery": "Harbourmaster's Office Vodice Croatia",
+    "city": "Vodice",
+    "office_code": "LI Vodice",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LI Šilo",
+    "sourceQuery": "Harbourmaster's Office Šilo Croatia",
+    "city": "Šilo",
+    "office_code": "LI Šilo",
+    "type": "branch",
+    "category_id": 194
+  },
+  {
+    "placeId": "ChIJmcOAOSl1TBMR7X-JXeszYdk",
+    "preferredName": "LK DUBROVNIK",
+    "sourceQuery": "Harbourmaster's Office Dubrovnik Croatia",
+    "city": "Dubrovnik",
+    "office_code": "LK DUBROVNIK",
+    "type": "main",
+    "category_id": 193
+  },
+  {
+    "placeId": "ChIJNzqYZKfnXEcR7_jtiZNBORQ",
+    "preferredName": "LK OSIJEK",
+    "sourceQuery": "Harbourmaster's Office Osijek Croatia",
+    "city": "Osijek",
+    "office_code": "LK OSIJEK",
+    "type": "main",
+    "category_id": 193
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LK PLOČE",
+    "sourceQuery": "Harbourmaster's Office Ploče Croatia",
+    "city": "Ploče",
+    "office_code": "LK PLOČE",
+    "type": "main",
+    "category_id": 193
+  },
+  {
+    "placeId": "ChIJf4ukc-HSfEcRw9MvpAt2Dwo",
+    "preferredName": "LK PULA",
+    "sourceQuery": "Harbourmaster's Office Pula Croatia",
+    "city": "Pula",
+    "office_code": "LK PULA",
+    "type": "main",
+    "category_id": 193
+  },
+  {
+    "placeId": "ChIJRVBQ8OOgZEcRm3kEt9uLylg",
+    "preferredName": "LK RIJEKA",
+    "sourceQuery": "Harbourmaster's Office Rijeka Croatia",
+    "city": "Rijeka",
+    "office_code": "LK RIJEKA",
+    "type": "main",
+    "category_id": 193
+  },
+  {
+    "placeId": "ChIJRVBQ8OOgZEcRm3kEt9uLylg",
+    "preferredName": "LK SENJ",
+    "sourceQuery": "Harbourmaster's Office Senj Croatia",
+    "city": "Senj",
+    "office_code": "LK SENJ",
+    "type": "main",
+    "category_id": 193
+  },
+  {
+    "placeId": "ChIJl6CFu_-5XUcRSx3QqH31Z2E",
+    "preferredName": "LK SLAVONSKI BROD",
+    "sourceQuery": "Harbourmaster's Office Slavonski Brod Croatia",
+    "city": "Slavonski Brod",
+    "office_code": "LK SLAVONSKI BROD",
+    "type": "main",
+    "category_id": 193
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LK SPLIT",
+    "sourceQuery": "Harbourmaster's Office Split Croatia",
+    "city": "Split",
+    "office_code": "LK SPLIT",
+    "type": "main",
+    "category_id": 193
+  },
+  {
+    "placeId": "ChIJSzt56v9dNRMRLM1cESYH4zQ",
+    "preferredName": "LK ZADAR",
+    "sourceQuery": "Harbourmaster's Office Zadar Croatia",
+    "city": "Zadar",
+    "office_code": "LK ZADAR",
+    "type": "main",
+    "category_id": 193
+  },
+  {
+    "placeId": "ChIJcycs9fUlNRMRAe8e1t1cix8",
+    "preferredName": "LK ŠIBENIK",
+    "sourceQuery": "Harbourmaster's Office Šibenik Croatia",
+    "city": "Šibenik",
+    "office_code": "LK ŠIBENIK",
+    "type": "main",
+    "category_id": 193
   }
 ]
