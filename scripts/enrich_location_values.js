@@ -1,3 +1,5 @@
+// scripts/enrich_location_values.js
+
 require("dotenv").config();
 const { createClient } = require("@supabase/supabase-js");
 const axios = require("axios");
@@ -10,9 +12,12 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const INCLUDE_REVIEWS = process.env.INCLUDE_REVIEWS === "true";
 const MAX_PHOTOS = Number(process.env.MAX_PHOTOS || 10);
 
+// ✅ Neu: Schutzschalter – wenn true, dürfen bestehende Übersetzungen überschrieben werden
+const FORCE_TRANSLATIONS = process.env.FORCE_TRANSLATIONS === "true";
+
 if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error("Missing SUPABASE_URL or SUPABASE_KEY");
 if (!GOOGLE_API_KEY) throw new Error("Missing GOOGLE_API_KEY");
-if (!OPENAI_API_KEY) console.warn("⚠️ OPENAI_API_KEY missing – translations will fallback to raw text");
+if (!OPENAI_API_KEY) console.warn("⚠️ OPENAI_API_KEY missing – translations will be skipped (no fallback)");
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -35,8 +40,23 @@ function loadPlaceIdsFromFile(path) {
   }
 }
 
+// ✅ Neu: Prüft, ob bereits ein manuell/AI gepflegter Textwert existiert (Schreibschutz)
+async function hasExistingTextValue(locationId, attributeId, languageCode) {
+  const { data, error } = await supabase
+    .from("location_values")
+    .select("value_text")
+    .eq("location_id", locationId)
+    .eq("attribute_id", attributeId)
+    .eq("language_code", languageCode)
+    .maybeSingle();
+
+  if (error) throw error;
+  return Boolean(data?.value_text && String(data.value_text).trim().length > 0);
+}
+
 async function translateWithOpenAI(text, targetLang) {
-  if (!OPENAI_API_KEY) return text;
+  // ✅ Neu: Wenn kein Key -> keine Übersetzung (skip), kein Fallback auf EN
+  if (!OPENAI_API_KEY) return null;
 
   try {
     const response = await axios.post(
@@ -57,17 +77,16 @@ async function translateWithOpenAI(text, targetLang) {
         timeout: 60000,
       }
     );
-    return response.data.choices[0].message.content.trim();
+
+    const out = response?.data?.choices?.[0]?.message?.content?.trim();
+    return out && out.length > 0 ? out : null;
   } catch (err) {
+    // ✅ Neu: Sofortdiagnose mit Statuscode
     const status = err?.response?.status;
     const data = err?.response?.data;
-
-    console.error(
-      `❌ OpenAI Fehler bei Übersetzung (${targetLang}) status=${status}:`,
-      data || err.message
-    );
-
-    return text; // fürs Debug erstmal so lassen, damit dein aktuelles Verhalten nicht sofort kippt
+    console.error(`❌ OpenAI Fehler bei Übersetzung (${targetLang}) status=${status}:`, data || err.message);
+    // ✅ Neu: kein EN-Fallback mehr
+    return null;
   }
 }
 
@@ -82,7 +101,9 @@ async function getPlaceDetails(placeId, lang = "en") {
 
   const response = await axios.get(url, { timeout: 60000 });
   if (!response.data || response.data.status !== "OK") {
-    throw new Error(`Google Details failed: ${response.data?.status} - ${response.data?.error_message || "no error_message"}`);
+    throw new Error(
+      `Google Details failed: ${response.data?.status} - ${response.data?.error_message || "no error_message"}`
+    );
   }
   return response.data.result;
 }
@@ -244,11 +265,33 @@ async function enrichLocationValues() {
         const langs = attr.multilingual ? LANGUAGES : [NO_LANG];
 
         for (const lang of langs) {
+          // ✅ Schreibschutz gilt nur für multilingual + text + echte Sprachen (nicht "und") + nicht EN
+          if (
+            attr.multilingual &&
+            attr.input_type === "text" &&
+            lang !== "en" &&
+            !FORCE_TRANSLATIONS
+          ) {
+            const exists = await hasExistingTextValue(location.id, attr.attribute_id, lang);
+            if (exists) {
+              console.log(`🛡️ Skip overwrite: ${attr.key} [${lang}] bereits vorhanden`);
+              continue;
+            }
+          }
+
           let valueForInsert = raw;
 
           // Übersetzung nur für string-basierte, mehrsprachige Felder
           if (attr.multilingual && lang !== "en" && typeof raw === "string") {
-            valueForInsert = await translateWithOpenAI(raw, lang);
+            const translated = await translateWithOpenAI(raw, lang);
+
+            // ✅ Neu: wenn keine Übersetzung möglich -> nicht speichern (kein EN-Fallback!)
+            if (!translated || translated.trim() === "" || translated.trim() === raw.trim()) {
+              console.log(`➖ Übersetzung nicht verfügbar, skip (${attr.key} -> ${lang})`);
+              continue;
+            }
+
+            valueForInsert = translated;
           }
 
           const insertData = {
