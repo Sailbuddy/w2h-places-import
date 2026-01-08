@@ -13,9 +13,11 @@ jobs:
       GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       INCLUDE_REVIEWS: "false"
-      # ⚙️ Schalter für den fetten Feldsatz in import_places.js
+       # ✅ Schutz: vorhandene Übersetzungen nicht überschreiben
+      FORCE_TRANSLATIONS: "false"
+       # ⚙️ Schalter für den fetten Feldsatz in import_places.js
       FULL_IMPORT: "true"
-
+ 
     steps:
       - name: "📥 Checkout Repo"
         uses: actions/checkout@v4
