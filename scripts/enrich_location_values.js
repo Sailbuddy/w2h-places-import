@@ -59,8 +59,15 @@ async function translateWithOpenAI(text, targetLang) {
     );
     return response.data.choices[0].message.content.trim();
   } catch (err) {
-    console.error(`❌ OpenAI Fehler bei Übersetzung (${targetLang}):`, err?.response?.data || err.message);
-    return text;
+    const status = err?.response?.status;
+    const data = err?.response?.data;
+
+    console.error(
+      `❌ OpenAI Fehler bei Übersetzung (${targetLang}) status=${status}:`,
+      data || err.message
+    );
+
+    return text; // fürs Debug erstmal so lassen, damit dein aktuelles Verhalten nicht sofort kippt
   }
 }
 
